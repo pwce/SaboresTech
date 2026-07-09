@@ -2,16 +2,18 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState } from "react";
 import ProtectedRoute from "./ProtectedRoute";
 import PinLoginView from "../views/common/PinLoginView.jsx";
+import ProductosAdminView from "../views/common/ProductosAdminView.jsx";
 
 export default function AppRoutes() {
   // se guarda solo el string del rol para evitar re-renders por objetos
   const [rolUsuario, setRolUsuario] = useState(null);
 
   const manejarLoginExitoso = (data) => {
-    // el backend responde con { rol: 'atendedor' } o { rol: 'duena' } directamente
     console.log("Login exitoso capturado en AppRoutes:", data);
-    if (data && data.rol) {
-      setRolUsuario(data.rol);
+    // secontrola de forma segura la asignación de la ruta según el backend
+    if (data && (data.rol === "atendedor" || data.rol === "duena" || data.rol === "dueña")) {
+      //'dueña' a 'duena' por consistencia con las rutas URL
+      setRolUsuario(data.rol === "dueña" ? "duena" : data.rol);
     } else {
       setRolUsuario("atendedor");
     }
@@ -36,12 +38,15 @@ export default function AppRoutes() {
         <Route 
           path="/atendedor" 
           element={
-            // se quita temporalmente el guard problemático para probar la vista con estilos
             <div className="p-8 text-white bg-carbon-900 min-h-screen font-body">
-              <h1 className="text-3xl font-display font-bold text-brand-500">
+              <h1 className="text-3xl font-display font-bold text-brand-500 mb-2">
                 Panel de Atendedor
               </h1>
-              <p className="text-carbon-300 mt-2">¡Lograste entrar al sistema de comandas con éxito, Paz! 🎉</p>
+              <p className="text-carbon-300 mb-6">¡Lograste entrar al sistema de comandas con éxito, Paz! 🎉</p>
+              
+              {/* gestor de productos directamente en su panel */}
+              <hr className="border-carbon-700 my-6" />
+              <ProductosAdminView />
             </div>
           } 
         />
@@ -51,10 +56,14 @@ export default function AppRoutes() {
           path="/duena" 
           element={
             <div className="p-8 text-white bg-carbon-900 min-h-screen font-body">
-              <h1 className="text-3xl font-display font-bold text-accent">
+              <h1 className="text-3xl font-display font-bold text-accent mb-2">
                 Panel de Dueña
               </h1>
-              <p className="text-carbon-300 mt-2">¡Bienvenida al panel administrativo!</p>
+              <p className="text-carbon-300 mb-6">¡Bienvenida al panel administrativo, Jefa!</p>
+              
+              {/* la dueña también ve e interactúa con el mismo módulo exacto */}
+              <hr className="border-carbon-700 my-6" />
+              <ProductosAdminView />
             </div>
           } 
         />

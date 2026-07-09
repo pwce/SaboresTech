@@ -26,7 +26,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
   // Si está autenticado pero su rol no tiene permiso para esta pantalla, lo bloqueamos
   if (allowedRoles && !allowedRoles.includes(rol)) {
     // Si es atendedor y se coló a la vista de dueña, o viceversa, lo mandamos a su panel correspondiente
-    return <Navigate to={rol === "duena" ? "/duena" : "/atendedor"} replace />;
+    return <Navigate to={rol === "dueña" ? "/dueña" : "/atendedor"} replace />;
   }
 
   // Si todo está en orden, lo dejamos pasar a la vista protegida
