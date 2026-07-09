@@ -1,0 +1,6 @@
+Plaintext
+node_modules/
+.env
+src/config/.env
+dist/
+.DS_Store

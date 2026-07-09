@@ -1,0 +1,38 @@
+{
+  "name": "sabores-tech",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pwce/ProyectoTesis.git"
+  },
+  "keywords": [],
+  "author": "Maria Paz Poveda",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pwce/ProyectoTesis/issues"
+  },
+  "homepage": "https://github.com/pwce/ProyectoTesis#readme",
+  "description": "",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "joi": "^18.1.2",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.11.0",
+    "pg": "^8.20.0",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.28"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
