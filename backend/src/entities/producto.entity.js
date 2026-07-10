@@ -27,6 +27,11 @@ export const ProductoEntity = new EntitySchema({
             type: 'boolean',
             default: true,
         },
+        controlaStock: {
+            name: 'controla_stock',
+            type: 'boolean',
+            default: true,
+        },
         stock: {
             type: 'int',
             default: 0, 

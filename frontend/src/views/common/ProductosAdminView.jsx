@@ -1,29 +1,16 @@
-import React, { useState } from 'react';
-
-//catálogo maestro extendido (en el futuro vendrá de la base de datos con sus imágenes)
-const CATALOGO_MAESTRO = [
-  { id: 1, nombre: 'Empanada de Pino', precio: 3000, categoria: 'empanadas', controlaStock: true, imagen: 'https://via.placeholder.com/60' },
-  { id: 2, nombre: 'Empanada Pollo-Choclo-Queso', precio: 3000, categoria: 'empanadas', controlaStock: true, imagen: 'https://via.placeholder.com/60' },
-  { id: 3, nombre: 'Pizza Napolitana', precio: 3000, categoria: 'pizzas', controlaStock: true, imagen: 'https://via.placeholder.com/60' },
-  { id: 4, nombre: 'Pizza Vegetariana', precio: 3000, categoria: 'pizzas', controlaStock: true, imagen: 'https://via.placeholder.com/60' },
-  { id: 5, nombre: 'Frapuccino', precio: 3500, categoria: 'frappes', controlaStock: false, imagen: 'https://via.placeholder.com/60' },
-  { id: 6, nombre: 'Jugo Natural (1 o 2 Frutas)', precio: 2500, categoria: 'jugos', controlaStock: false, imagen: 'https://via.placeholder.com/60' },
-  { id: 7, nombre: 'Milkshake (1 o 2 Frutas)', precio: 3500, categoria: 'milkshakes', controlaStock: false, imagen: 'https://via.placeholder.com/60' },
-];
+import React, { useState, useEffect } from 'react';
 
 export default function ProductosAdminView() {
   // Estado para los productos
-  const [productos, setProductos] = useState(
-    CATALOGO_MAESTRO.map(p => ({ ...p, activoHoy: false, stockActual: 0 }))
-  );
-
+  const [productos, setProductos] = useState([]);
+  
   // estado para el formulario de nuevo producto
   const [nuevoProducto, setNuevoProducto] = useState({
     nombre: '',
     precio: '',
     categoria: 'empanadas',
     controlaStock: true,
-    imagen: ''
+    imagen: null
   });
 
   // Estado para el inventario de insumos del día (Frappés y Jugos)
@@ -34,6 +21,24 @@ export default function ProductosAdminView() {
     extras: { crema: true, galletas_oreo: true, chocolatepolvo: true, matcha: true, café: true, vainilla: true, menta: true  },
     envases: {vasos: 200, tapas: 200, bombillas: 200}
   });
+  
+  useEffect(() => {
+    const cargarProductosBD = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/v1/productos');
+        if (response.ok) {
+          const datos = await response.json();
+          // Inyectamos las propiedades temporales necesarias para el control diario en el Foodtruck
+          setProductos(datos.map(p => ({ ...p, activoHoy: false, stockActual: 0 })));
+        } else {
+          console.error("Error al obtener productos del servidor");
+        }
+      } catch (error) {
+        console.error("Error conectando con el catálogo maestro de la BD:", error);
+      }
+    };
+    cargarProductosBD();
+  }, []);
 
   // Funciones para actualizar productos
   const toggleActivoHoy = (id) => {
@@ -61,33 +66,61 @@ export default function ProductosAdminView() {
     ));
   };
 
-  // Agregar nuevo producto al catálogo local
-  const handleCrearProducto = (e) => {
-    e.preventDefault();
-    if (!nuevoProducto.nombre || !nuevoProducto.precio) return;
+  // Agregar nuevo producto al catálogo real
+  const handleCrearProducto = async (e) => {
+  e.preventDefault();
+  if (!nuevoProducto.nombre || !nuevoProducto.precio) return;
 
-    const productoCreado = {
-      id: Date.now(), // ID temporal único
-      nombre: nuevoProducto.nombre,
-      precio: Number(nuevoProducto.precio),
-      categoria: nuevoProducto.categoria,
-      controlaStock: nuevoProducto.controlaStock,
-      imagen: nuevoProducto.imagen || 'https://via.placeholder.com/60',
-      activoHoy: true, // Se activa automáticamente para la jornada actual al crearse
-      stockActual: nuevoProducto.controlaStock ? 10 : 0
+  try {
+
+    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Nywicm9sIjoiZHVlw7FhIiwibm9tYnJlIjoiQ2Fyb2xpbmEiLCJpYXQiOjE3ODM2NzQ4MDcsImV4cCI6MTc4MzcxODAwN30.tvP-U4GoyOc9clBH-8zbx4zrpPL9z6eoaNjahAbm2_E";
+    // 1. Creamos el objeto FormData normalmente
+    const formData = new FormData();
+    formData.append('nombre', nuevoProducto.nombre);
+    formData.append('precio', String(nuevoProducto.precio));
+    formData.append('categoria', nuevoProducto.categoria);
+    formData.append('controlaStock', String(nuevoProducto.controlaStock));
+    
+    if (nuevoProducto.imagen) {
+      formData.append('imagen', nuevoProducto.imagen);
+    }
+
+    const response = await fetch('http://localhost:3000/api/v1/productos', {
+      method: 'POST',
+      headers: {'Authorization': `Bearer ${token}`},
+      body: formData 
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error en el servidor: ${response.status}`);
+    }
+
+    const productoGuardado = await response.json();
+
+    const nuevoProductoConEstado = {
+      ...productoGuardado,
+      activoHoy: true,
+      stockActual: productoGuardado.controlaStock ? 10 : 0
     };
 
-    setProductos(prev => [...prev, productoCreado]);
+    setProductos(prev => [...prev, nuevoProductoConEstado]);
     
-    // Limpiar formulario
     setNuevoProducto({
       nombre: '',
       precio: '',
       categoria: 'empanadas',
       controlaStock: true,
-      imagen: ''
+      imagen: null
     });
-  };
+    
+    e.target.reset();
+    alert("¡Producto creado y guardado con éxito!");
+
+  } catch (error) {
+    console.error("Error al conectar con la API:", error);
+    alert("Hubo un problema al guardar el producto. Verifica la conexión.");
+  }
+};
 
   // Función para manejar los insumos (toggles rápidos)
   const toggleInsumo = (tipo, clave) => {
@@ -111,6 +144,7 @@ export default function ProductosAdminView() {
 
   return (
     <div className="bg-carbon-900 text-white min-h-screen p-4 font-body">
+
       <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h2 className="text-2xl font-display font-bold text-brand-500">Configuración de la Jornada</h2>
@@ -120,7 +154,7 @@ export default function ProductosAdminView() {
           onClick={guardarJornada}
           className="min-h-touch bg-accent hover:bg-accent-dark text-white font-display font-bold px-8 rounded-card transition-colors shadow-lg w-full md:w-auto"
         >
-          Abrir Caja e Inventario de Hoy
+          Confirmar y Abrir Jornada
         </button>
       </div>
 
@@ -129,7 +163,7 @@ export default function ProductosAdminView() {
         {/* COLUMNA IZQUIERDA Y CENTRAL: PRODUCTOS POR CATEGORÍA */}
         <div className="lg:col-span-8 space-y-8">
 
-          {/* ➕ FORMULARIO PARA CREAR NUEVO PRODUCTO EN EL SISTEMA */}
+          {/* FORMULARIO PARA CREAR NUEVO PRODUCTO EN EL SISTEMA */}
           <div className="bg-carbon-850 p-5 rounded-card border-2 border-dashed border-carbon-700 shadow-md">
             <h3 className="text-md font-display font-bold text-brand-400 mb-4 flex items-center gap-2">
               Agregar Nuevo Producto al Menú
@@ -181,13 +215,12 @@ export default function ProductosAdminView() {
               </div>
 
               <div className="sm:col-span-9">
-                <label className="text-[11px] text-carbon-400 uppercase font-bold block mb-1">URL Imagen (Opcional)</label>
+                <label className="text-[11px] text-carbon-400 uppercase font-bold block mb-1">Foto del Producto</label>
                 <input 
-                  type="text" 
-                  placeholder="https://enlace-de-la-foto.com/imagen.jpg" 
-                  value={nuevoProducto.imagen}
-                  onChange={(e) => setNuevoProducto({...nuevoProducto, imagen: e.target.value})}
-                  className="w-full bg-carbon-900 border border-carbon-700 rounded p-2 text-xs text-white focus:outline-none focus:border-brand-500"
+                  type="file" 
+                  accept="image/*"
+                  onChange={(e) => setNuevoProducto({...nuevoProducto, imagen: e.target.files[0]})}
+                  className="w-full bg-carbon-900 border border-carbon-700 rounded p-1.5 text-xs text-brand-400 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-brand-500 file:text-carbon-950 hover:file:bg-brand-600 file:cursor-pointer"
                 />
               </div>
 
@@ -270,17 +303,11 @@ export default function ProductosAdminView() {
               {Object.keys(insumosHoy.envases).map(item => (
                 <div key={item} className="flex flex-col sm:flex-row justify-between sm:items-center bg-carbon-900 p-3 rounded-lg border border-carbon-700 gap-3">
                   <span className="capitalize font-semibold text-sm text-brand-100">{item}</span>
-        
-                  {/* NUEVA BOTONERA ESPEJO DE ALTA PRECISIÓN */}
-                  <div className="flex items-center bg-carbon-850 border border-carbon-700 rounded-lg overflow-hidden p-0.5 gap-1 self-end sm:self-auto">
-                    {/* Botones de restar */}
+                  
+                  <div className="flex items-center bg-carbon-850 border border-carbon-700 rounded-lg overflow-hidden p-0.5 gap-1 self-end sm:self-auto">                   
                     <button type="button" onClick={() => ajustarEnvase(item, -5)} className="px-2 py-1 text-xs font-bold text-accent/70 hover:bg-carbon-800 rounded">-5</button>
-                    <button type="button" onClick={() => ajustarEnvase(item, -1)} className="px-2.5 py-1 text-base font-bold text-accent hover:bg-carbon-800 rounded">-</button>
-          
-                    {/* Cantidad exacta */}
+                    <button type="button" onClick={() => ajustarEnvase(item, -1)} className="px-2.5 py-1 text-base font-bold text-accent hover:bg-carbon-800 rounded">-</button>          
                     <span className="w-10 text-center font-display font-bold text-sm text-brand-400">{insumosHoy.envases[item]}</span>
-          
-                    {/* Botones de sumar */}
                     <button type="button" onClick={() => ajustarEnvase(item, 1)} className="px-2.5 py-1 text-base font-bold text-brand-500 hover:bg-carbon-800 rounded">+</button>
                     <button type="button" onClick={() => ajustarEnvase(item, 5)} className="px-2 py-1 text-xs font-bold text-brand-500/70 hover:bg-carbon-800 rounded">+5</button>
                   </div>

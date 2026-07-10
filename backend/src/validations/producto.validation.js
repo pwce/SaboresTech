@@ -9,11 +9,12 @@ const productoSchema = Joi.object({
         'number.min': 'El precio debe ser un número positivo mayor a 0',
         'any.required': 'El precio es obligatorio'
     }),
-    category: Joi.string().valid('Frappés', 'Jugos naturales', 'Milkshakes', 'Pizzas', 'Sándwiches', 'Empanadas').required().messages({
-        'any.only': 'La categoría debe ser una de las permitidas (Frappés, Jugos naturales, Milkshakes, Pizzas, Sándwiches, Empanadas)',
+    categoria: Joi.string().required().messages({
         'any.required': 'La categoría es obligatoria'
     }),
-    disponible: Joi.boolean().default(true)
+    disponible: Joi.boolean().default(true),
+    controlaStock: Joi.any().optional(),
+    imagen: Joi.any().optional() 
 });
 
 export default productoSchema;
