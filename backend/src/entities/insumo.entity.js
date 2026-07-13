@@ -16,19 +16,19 @@ export const InsumoEntity = new EntitySchema({
             nullable: false,
         },
         cantidadActual: {
-            type: 'float', // por si quedan 1.5 litros de leche
+            type: 'float', 
             nullable: false,
             default: 0,
         },
         unidadMedida: {
             type: 'varchar',
             length: 20,
-            nullable: false, // gr, ml, unid, kg
+            nullable: false,
         },
         disponible: {
             type: 'boolean',
             nullable: false,
-            default: true, // por defecto todo insumo nuevo se asume disponible
+            default: true,
         }
     }
 });

@@ -1,39 +1,109 @@
 import { AppDataSource } from '../config/configDb.js';
 import { ProductoEntity } from '../entities/producto.entity.js';
 
-
 const productoRepository = AppDataSource.getRepository(ProductoEntity);
 
-// obtener todos los productos para la tablet del cliente
 export async function obtenerProductos(req, res) {
     try {
-        const productos = await productoRepository.find();
-        
+        const productos = await productoRepository.find({ order: { id: "ASC" } });
         const productosFormateados = productos.map(p => ({
             id: p.id,
             nombre: p.nombre,
             precio: p.precio,
             categoria: p.categoria,
-            controlaStock: p.controlaStock ?? true,
+            disponible: p.disponible,
+            controlaStock: p.controlaStock,
+            stock: p.stock,
+            enJornada: p.enJornada ?? false,
             imagen: p.imagenUrl || 'https://via.placeholder.com/60'
         }));
-
-        return res.status(200).json(productosFormateados); // Retornamos directo el arreglo para el .map() de React
+        return res.status(200).json({
+            success: true,
+            data: productosFormateados});
     } catch (error) {
         console.error("Error en obtenerProductos:", error);
         return res.status(500).json({
             success: false,
-            mensaje: "Error interno al obtener los productos de la base de datos"
+            mensaje: "Error interno al obtener los productos"
         });
     }
 }    
+
+export async function obtenerProductosJornada(req, res) {
+    try {
+        const productosDeHoy = await productoRepository.find({
+            where: { 
+                enJornada: true,
+                disponible: true 
+            }
+        });
+
+        const productosFormateados = productosDeHoy.map(p => ({
+            id: `p-${p.id}`, 
+            nombre: p.nombre,
+            precio: p.precio,
+            categoria: p.categoria, 
+            tipo: determinarTipoProducto(p.nombre), 
+            imagen: p.imagenUrl || null
+        }));
+
+        return res.status(200).json({
+            success: true,
+            data: productosFormateados
+        });
+    } catch (error) {
+        console.error("Error al obtener productos de la jornada:", error);
+        return res.status(500).json({
+            success: false,
+            mensaje: "Error interno al cargar el menú del día"
+        });
+    }
+}
+
+export async function cambiarEstadoJornada(req, res) {
+    try {
+        const { id } = req.params;
+        const { enJornada } = req.body; 
+
+        const producto = await productoRepository.findOneBy({ id: Number(id) });
+        if (!producto) {
+            return res.status(404).json({
+                success: false,
+                mensaje: "El producto no existe"
+            });
+        }
+
+        producto.enJornada = enJornada;
+        await productoRepository.save(producto);
+
+        return res.status(200).json({ 
+            success: true,
+            mensaje: "Disponibilidad diaria cambiada con éxito",
+            data: producto 
+        });
+    } catch (error) {
+        console.error("Error en cambiarEstadoJornada:", error);
+        return res.status(500).json({
+            success: false,
+            mensaje: "Error interno al cambiar el estado de la jornada"
+        });
+    }
+}
+
+function determinarTipoProducto(nombre) {
+    const n = nombre.toLowerCase();
+    if (n.includes("sandwich") || n.includes("sándwich")) return "sandwich";
+    if (n.includes("jugo")) return "jugo";
+    if (n.includes("milkshake")) return "milkshake";
+    if (n.includes("frappe") || n.includes("frappé")) return "frappe";
+    return "simple"; 
+}
 
 // crear un nuevo producto
 export async function crearProducto(req, res) {
     try {
         const { nombre, precio, categoria, controlaStock } = req.body;
 
-        // validar que vengan los datos obligatorios
         if (!nombre || !precio || !categoria) {
             return res.status(400).json({
                 success: false,
@@ -49,16 +119,18 @@ export async function crearProducto(req, res) {
         const nuevoProducto = productoRepository.create({
             nombre,
             precio: Number(precio),
-            categoria: categoria || 'empanadas',
+            categoria: categoria || 'salado',
             controlaStock: controlaStock === 'true' || controlaStock === true,
             disponible: true,
             stock: 0,
-            imagenUrl: urlFinal
+            imagenUrl: urlFinal,
+            enJornada: false
         });
 
         await productoRepository.save(nuevoProducto);
 
         return res.status(201).json({
+            success: true,
             id: nuevoProducto.id,
             nombre: nuevoProducto.nombre,
             precio: nuevoProducto.precio,
@@ -79,9 +151,8 @@ export async function crearProducto(req, res) {
 export async function actualizarProducto(req, res) {
     try {
         const { id } = req.params; 
-        const { nombre, precio, category, disponible, imagenUrl } = req.body; 
+        const { nombre, precio, category, disponible, imagenUrl, enJornada } = req.body; 
 
-        // buscar si el producto realmente existe
         const producto = await productoRepository.findOneBy({ id: Number(id) });
         if (!producto) {
             return res.status(404).json({
@@ -90,14 +161,13 @@ export async function actualizarProducto(req, res) {
             });
         }
 
-        // aplicar los cambios de forma inteligente (si vienen en la peticion)
         if (nombre !== undefined) producto.nombre = nombre;
         if (precio !== undefined) producto.precio = precio;
         if (category !== undefined) producto.categoria = category;
         if (disponible !== undefined) producto.disponible = disponible;
-        if (imagenUrl !== undefined) producto.imagenUrl = imagenUrl; // Soporte de actualización de imagen
+        if (imagenUrl !== undefined) producto.imagenUrl = imagenUrl; 
+        if (enJornada !== undefined) producto.enJornada = enJornada;
 
-        // se guardan los cambios
         await productoRepository.save(producto);
 
         return res.status(200).json({
@@ -118,8 +188,7 @@ export async function actualizarProducto(req, res) {
 export async function eliminarProducto(req, res) {
     try {
         const { id } = req.params;
-
-        // buscar si existe antes de borrar
+    
         const producto = await productoRepository.findOneBy({ id: Number(id) });
         if (!producto) {
             return res.status(404).json({

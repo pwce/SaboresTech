@@ -7,10 +7,10 @@ const pedidoRepository = AppDataSource.getRepository(PedidoEntity);
 const detalleRepository = AppDataSource.getRepository(DetallePedidoEntity);
 const productoRepository = AppDataSource.getRepository(ProductoEntity);
 
-// CREAR UN NUEVO PEDIDO DESDE LA TABLET DE AUTOSERVICIO
+
 export async function crearPedido(req, res) {
     try {
-        // se añadió 'montoRecibido' por si paga en efectivo de inmediato
+        
         const { usuario_id, metodoPago, productos, montoRecibido } = req.body; 
         
         if (!metodoPago || !productos || productos.length === 0) {
@@ -41,7 +41,6 @@ export async function crearPedido(req, res) {
                 });
             }
 
-            // CONTROL DE STOCK DIARIO (Pizzas, Sándwiches, Empanadas)
             const categoriasConStockFijo = ['Pizzas', 'Sándwiches', 'Empanadas', 'Donas'];
             if (categoriasConStockFijo.includes(prodReal.categoria)) {
                 if (prodReal.stock < item.cantidad) {
@@ -51,10 +50,9 @@ export async function crearPedido(req, res) {
                     });
                 }
                 
-                // se descuentan las unidades del stock del producto
+
                 prodReal.stock -= item.cantidad;
 
-                // Si se agota por completo, lo apagamos automáticamente para el autoservicio
                 if (prodReal.stock === 0) {
                     prodReal.disponible = false;
                 }
@@ -65,7 +63,7 @@ export async function crearPedido(req, res) {
             const subtotal = prodReal.precio * item.cantidad;
             totalPedido += subtotal;
 
-            // preparar el registro del detalle incluyendo las personalizaciones enviadas
+
             listaDetallesA_Guardar.push({
                 cantidad: item.cantidad,
                 precioUnitario: prodReal.precio,
@@ -74,7 +72,7 @@ export async function crearPedido(req, res) {
             });
         }
 
-        // lógica inteligente de vuelto y estados financieros iniciales
+        // lógica de vuelto y estados financieros iniciales
         let vueltoCalculado = 0;
         let estadoPagoInicial = 'pendiente';
         let estadoCocinaInicial = 'en_espera';
@@ -87,15 +85,14 @@ export async function crearPedido(req, res) {
                 });
             }
             vueltoCalculado = montoRecibido - totalPedido;
-            estadoPagoInicial = 'validado'; // Si pagó completo en efectivo, queda validado
-            estadoCocinaInicial = 'en_preparacion'; // Pasa directo a cocinarse
+            estadoPagoInicial = 'validado'; 
+            estadoCocinaInicial = 'en_preparacion'; 
         } else if (metodoPago === 'tarjeta' || metodoPago === 'transferencia') {
-            // Tarjeta y transferencia asumen validación inmediata si pasan por pasarela/confirmación
             estadoPagoInicial = 'validado';
             estadoCocinaInicial = 'en_preparacion';
         }
 
-        // guardar la cabecera del pedido general con los nuevos campos
+
         const nuevoPedido = pedidoRepository.create({
             total: totalPedido,
             metodoPago,
@@ -107,13 +104,13 @@ export async function crearPedido(req, res) {
         });
         await pedidoRepository.save(nuevoPedido);
 
-        // guardar cada uno de los detalles enlazándolos al pedido recién creado
+
         for (const detalle of listaDetallesA_Guardar) {
             const filaDetalle = detalleRepository.create({
                 cantidad: detalle.cantidad,
                 precioUnitario: detalle.precioUnitario,
                 producto: detalle.producto,
-                personalizaciones: detalle.personalizaciones, // Guardado en BD
+                personalizaciones: detalle.personalizaciones,
                 pedido: nuevoPedido 
             });
             await detalleRepository.save(filaDetalle);
@@ -136,7 +133,7 @@ export async function crearPedido(req, res) {
     }
 }
 
-// OBTENER PEDIDOS (para la pantalla de la cocina o reportes)
+
 export async function obtenerPedidos(req, res) {
     try {
         const pedidos = await pedidoRepository.find({
@@ -144,7 +141,7 @@ export async function obtenerPedidos(req, res) {
             order: { fecha: 'DESC' } 
         });
 
-        // buscamos dinámicamente los detalles correspondientes a cada pedido para la visualización completa
+        
         const pedidosConDetalles = await Promise.all(pedidos.map(async (pedido) => {
             const detalles = await detalleRepository.find({
                 where: { pedido: { id: pedido.id } },
@@ -169,7 +166,7 @@ export async function obtenerPedidos(req, res) {
     }
 }
 
-// CAMBIAR ESTADO (para que el atendedor mueva el pedido en cocina o valide pagos pendientes)
+
 export async function cambiarEstadoPedido(req, res) {
     try {
         const { id } = req.params;
@@ -183,7 +180,7 @@ export async function cambiarEstadoPedido(req, res) {
             });
         }
 
-        // 1. Manejo del estado de Cocina (Reemplaza los antiguos estados por los coherentes de negocio)
+        // Manejo del estado de cocina 
         if (nuevoEstado) {
             const estadosCocinaValidos = ['en_espera', 'en_preparacion', 'listo', 'entregado'];
             if (!estadosCocinaValidos.includes(nuevoEstado)) {
@@ -195,7 +192,7 @@ export async function cambiarEstadoPedido(req, res) {
             pedido.estadoCocina = nuevoEstado;
         }
 
-        // 2. Manejo del estado de Pago (Por si el pedido entra como 'pendiente' y el atendedor lo valida en caja)
+        // Manejo del estado de Pago
         if (nuevoEstadoPago) {
             if (!['pendiente', 'validado'].includes(nuevoEstadoPago)) {
                 return res.status(400).json({ success: false, mensaje: "Estado de pago no válido." });

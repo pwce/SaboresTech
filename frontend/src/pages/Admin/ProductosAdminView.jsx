@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
 export default function ProductosAdminView() {
-  // Estado para los productos
+
+  // estado para los productos
   const [productos, setProductos] = useState([]);
   
   // estado para el formulario de nuevo producto
@@ -13,7 +14,7 @@ export default function ProductosAdminView() {
     imagen: null
   });
 
-  // Estado para el inventario de insumos del día (Frappés y Jugos)
+  // sstado para el inventario de insumos del día (frappes y jugos)
   const [insumosHoy, setInsumosHoy] = useState({
     frutas: { frutilla: true, mango: true, piña: false, platano: true, naranja: false, arándano: true, frambuesa: true },
     leches: { entera: true, deslactosada: true },
@@ -28,7 +29,7 @@ export default function ProductosAdminView() {
         const response = await fetch('http://localhost:3000/api/v1/productos');
         if (response.ok) {
           const datos = await response.json();
-          // Inyectamos las propiedades temporales necesarias para el control diario en el Foodtruck
+
           setProductos(datos.map(p => ({ ...p, activoHoy: false, stockActual: 0 })));
         } else {
           console.error("Error al obtener productos del servidor");
@@ -40,7 +41,7 @@ export default function ProductosAdminView() {
     cargarProductosBD();
   }, []);
 
-  // Funciones para actualizar productos
+  // funciones para actualizar productos
   const toggleActivoHoy = (id) => {
     setProductos(prev => prev.map(p => 
       p.id === id ? { ...p, activoHoy: !p.activoHoy, stockActual: !p.activoHoy ? 10 : 0 } : p
@@ -66,7 +67,7 @@ export default function ProductosAdminView() {
     ));
   };
 
-  // Agregar nuevo producto al catálogo real
+  // agregar nuevo producto al catalogo real
   const handleCrearProducto = async (e) => {
   e.preventDefault();
   if (!nuevoProducto.nombre || !nuevoProducto.precio) return;
@@ -74,7 +75,7 @@ export default function ProductosAdminView() {
   try {
 
     const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Nywicm9sIjoiZHVlw7FhIiwibm9tYnJlIjoiQ2Fyb2xpbmEiLCJpYXQiOjE3ODM2NzQ4MDcsImV4cCI6MTc4MzcxODAwN30.tvP-U4GoyOc9clBH-8zbx4zrpPL9z6eoaNjahAbm2_E";
-    // 1. Creamos el objeto FormData normalmente
+
     const formData = new FormData();
     formData.append('nombre', nuevoProducto.nombre);
     formData.append('precio', String(nuevoProducto.precio));
@@ -122,7 +123,7 @@ export default function ProductosAdminView() {
   }
 };
 
-  // Función para manejar los insumos (toggles rápidos)
+  // funcion para manejar los insumos (toggles rápidos)
   const toggleInsumo = (tipo, clave) => {
     setInsumosHoy(prev => ({
       ...prev,
@@ -139,7 +140,6 @@ export default function ProductosAdminView() {
     alert("¡Jornada de Sabores de Carolina configurada con éxito!");
   };
 
-  // Agrupamos los productos por su categoría para renderizarlos ordenados
   const categorias = ['empanadas', 'pizzas', 'frappes', 'jugos', 'milkshakes', 'bebidas'];
 
   return (
@@ -314,7 +314,6 @@ export default function ProductosAdminView() {
                 </div>
               ))}
             </div>
-            <p className="text-[10px] text-carbon-400 mt-3">* Ajuste por lote (+5) o unitario para inventarios con cantidades impares.</p>
           </div>
 
           {/* Módulo Insumos / Frutas */}
@@ -329,8 +328,8 @@ export default function ProductosAdminView() {
                 ))}
               </div>
             </div>
-
-            <div>
+            
+            <div className="mt-6">
               <h4 className="text-xs font-bold text-carbon-400 uppercase tracking-widest mb-3">Leches</h4>
               {Object.keys(insumosHoy.leches).map(l => (
                 <button key={l} type="button" onClick={() => toggleInsumo('leches', l)} className={`w-full mb-2 p-2 rounded text-[10px] font-bold border capitalize ${insumosHoy.leches[l] ? 'bg-brand-500/10 border-brand-500 text-brand-400' : 'bg-carbon-900 border-carbon-800 text-carbon-600'}`}>
@@ -339,7 +338,7 @@ export default function ProductosAdminView() {
               ))}
             </div>
 
-            <div>
+            <div className="mt-6">
               <h4 className="text-xs font-bold text-carbon-400 uppercase tracking-widest mb-3">Extras y Variantes</h4>
               <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                 {Object.keys(insumosHoy.extras).map(ex => (

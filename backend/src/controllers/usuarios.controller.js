@@ -37,7 +37,7 @@ export async function crearUsuario(req, res) {
 
         const rolLower = rol.toLowerCase();
 
-        // si es atendedor o dueña, exigir el rut y contraseña obligatoriamente
+        
         if (rolLower === 'dueña' || rolLower === 'atendedor') {
             if (!rut || !password) {
                 return res.status(400).json({
@@ -46,7 +46,7 @@ export async function crearUsuario(req, res) {
                 });
             }
 
-            // comprobar si el rut ya esta ocupado
+        
             const usuarioExiste = await usuarioRepository.findOneBy({ rut });
             if (usuarioExiste) {
                 return res.status(400).json({
@@ -62,11 +62,9 @@ export async function crearUsuario(req, res) {
             passwordFinal = await bcrypt.hash(String(password), saltRounds);
         }
 
-        // se crea y guarda el usuario
         const nuevoUsuario = usuarioRepository.create({
             nombre,
-            rut: (rolLower === 'cliente') ? null : rut, // si es cliente se guarda vacio
-            password: passwordFinal,
+            rut: (rolLower === 'cliente') ? null : rut, 
             rol: rolLower
         });
 

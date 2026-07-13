@@ -3,7 +3,7 @@ import React from 'react';
 export default function PinPad({ onPressNumber, onDelete, onClear, pinLength }) {
   return (
     <div className="w-full max-w-md font-body">
-      {/* Visualizador de esferas del PIN */}
+      {/* visualizador del PIN */}
       <div className="flex justify-center gap-4 mb-6">
         {[0, 1, 2, 3].map((index) => (
           <div
@@ -17,7 +17,7 @@ export default function PinPad({ onPressNumber, onDelete, onClear, pinLength }) 
         ))}
       </div>
 
-      {/* Teclado Numérico Optimizado para Tablets (64px de alto) */}
+      {/* teclado numérico optimizado para tablets (64px de alto) */}
       <div className="grid grid-cols-3 gap-4 text-white">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
           <button
@@ -30,7 +30,7 @@ export default function PinPad({ onPressNumber, onDelete, onClear, pinLength }) 
           </button>
         ))}
 
-        {/* Botón de Limpiar (C) */}
+        {/* botón de limpiar (C) */}
         <button
           type="button"
           onClick={onClear}
@@ -48,7 +48,7 @@ export default function PinPad({ onPressNumber, onDelete, onClear, pinLength }) 
           0
         </button>
 
-        {/* Botón de Borrar */}
+        {/* botón de borrar */}
         <button
           type="button"
           onClick={onDelete}

@@ -30,8 +30,11 @@ const upload = multer({ storage });
 // GET /api/v1/productos para listar
 router.get('/', productosController.obtenerProductos);
 
+// GET /api/v1/productos/jornada menu publico para el totem de autoservicio
+router.get('/jornada', productosController.obtenerProductosJornada);
+
 // POST /api/v1/productos para crear uno nuevo (solo atendedor o dueña)
-router.post('/', verificarToken(['atendedor', 'dueña']), upload.single('imagen'), validarSchema(productoSchema), productosController.crearProducto);
+router.post('/', upload.single('imagen'), validarSchema(productoSchema), productosController.crearProducto);
 
 // PUT /api/v1/productos/:id mpdificar un producto
 router.put('/:id', verificarToken(['atendedor', 'dueña']), validarSchema(productoSchema), productosController.actualizarProducto);

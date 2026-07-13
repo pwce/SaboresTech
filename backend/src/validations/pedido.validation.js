@@ -1,6 +1,6 @@
 import Joi from 'joi';
 
-// el pedido contiene internamente los productos del carrito
+
 const detalleInternoSchema = Joi.object({
     producto_id: Joi.number().integer().required().messages({
         'any.required': 'El ID del producto es obligatorio en el detalle'
@@ -8,7 +8,7 @@ const detalleInternoSchema = Joi.object({
     cantidad: Joi.number().integer().min(1).required().messages({
         'number.min': 'La cantidad mínima de un producto debe ser 1'
     }),
-    // se permite las especificaciones del cliente de forma opcional
+   
     personalizaciones: Joi.string().max(255).optional().allow('').messages({
         'string.max': 'Las personalizaciones no pueden exceder los 255 caracteres'
     })

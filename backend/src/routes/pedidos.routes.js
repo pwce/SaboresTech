@@ -9,7 +9,7 @@ const router = express.Router();
 // obtener pedidos: solo permitido para caja/dueña
 router.get('/', verificarToken(['atendedor', 'dueña']), pedidosController.obtenerPedidos);
 
-// crear pedido desde la tablet de Autoservicio
+// crear pedido desde la tablet de autoservicio
 router.post('/', validarSchema(pedidoSchema), pedidosController.crearPedido);
 
 // cambiar estado: el endpoint original '/:id/estado', protegido para que solo lo mueva el personal

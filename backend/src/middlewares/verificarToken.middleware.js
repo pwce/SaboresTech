@@ -14,13 +14,13 @@ export const verificarToken = (rolesPermitidos = []) => {
     const token = authHeader.split(' ')[1];
 
     try {
-      // Usa una palabra secreta segura (idealmente desde process.env.JWT_SECRET)
+    
       const secret = process.env.JWT_SECRET || 'SaboresDeCarolinaSecretKey2026';
       const verificado = jwt.verify(token, secret);
       
-      req.usuario = verificado; // Guarda el id, rol y nombre en la petición
+      req.usuario = verificado; 
 
-      // Si se especificaron roles permitidos, verificar que el usuario lo tenga
+    
       if (rolesPermitidos.length > 0 && !rolesPermitidos.includes(verificado.rol)) {
         return res.status(403).json({
           success: false,

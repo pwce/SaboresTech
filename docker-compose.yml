@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # --- CONTENEDOR DE LA BASE DE DATOS ---
+  postgres_db:
+    image: postgres:17-alpine
+    container_name: sabores_tech_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres      
+      POSTGRES_PASSWORD: potato07
+      POSTGRES_DB: SaboresTech
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # --- CONTENEDOR DEL BACKEND ---
+  backend:
+    build: ./backend
+    container_name: sabores_tech_backend
+    restart: always
+    ports:
+      - "3000:3000"  # Mapea el puerto 3000 del servidor al 3000 del contenedor
+    environment:
+      - DB_HOST=postgres_db # Docker comunica los contenedores por su nombre de servicio
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=potato07
+      - DB_NAME=SaboresTech
+    depends_on:
+      - postgres_db
+    volumes:
+      - ./backend/src/uploads:/app/src/uploads # Evita que las imágenes subidas por Multer se borren al reiniciar
+
+  # --- CONTENEDOR DEL FRONTEND ---
+  frontend:
+    build: ./frontend
+    container_name: sabores_tech_frontend
+    restart: always
+    ports:
+      - "80:5173" # Mapea el puerto 80 estándar del servidor al puerto de Vite.
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

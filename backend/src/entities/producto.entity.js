@@ -41,6 +41,11 @@ export const ProductoEntity = new EntitySchema({
             type: 'varchar',
             length: 255,
             nullable: true,
+        },
+        enJornada: {
+            name: 'en_jornada',
+            type: 'boolean',
+            default: false,
         }
-    }
+    },
 });

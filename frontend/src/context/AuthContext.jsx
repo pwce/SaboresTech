@@ -8,7 +8,6 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Recupera la sesión automáticamente al cargar la app
   useEffect(() => {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -22,14 +21,13 @@ export function AuthProvider({ children }) {
   }, []);
 
   /**
-   * Intenta iniciar sesión con el PIN provisto
+   * intenta iniciar sesion con el pin provisto
    * @param {string} pin 
    */
   async function loginConPin(pin) {
-    // Llama al servicio del backend
+
     const respuesta = await verificarPin(pin); 
     
-    // Si la respuesta es exitosa, se guarda la sesión
     if (respuesta.success || respuesta.token) {
       const datosSesion = {
         nombre: respuesta.nombre,
@@ -39,7 +37,7 @@ export function AuthProvider({ children }) {
       
       setSession(datosSesion);
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(datosSesion));
-      return datosSesion.rol; // Retorna el rol para manejar la redirección en la vista
+      return datosSesion.rol;
     }
     throw new Error(respuesta.mensaje || "Error de autenticación");
   }

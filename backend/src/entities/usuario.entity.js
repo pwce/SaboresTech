@@ -18,11 +18,11 @@ export const UsuarioEntity = new EntitySchema({
         rut: {
             type: 'varchar',
             length: 12,
-            unique: true, // para que hayan usuarios con el mismo rut
+            unique: true,
             nullable: true,
         },
         password: {
-            type: 'varchar', // para guardar el pin o contraseña de forma encriptada
+            type: 'varchar', 
             nullable: true,
             select: true,
         },
@@ -35,11 +35,11 @@ export const UsuarioEntity = new EntitySchema({
     },
     listeners: {
         beforeInsert(event) {
-            // El objeto "entity" representa el usuario que se está intentando guardar
+            
             const usuario = event.entity;
             if (usuario && usuario.password) {
                 const saltRounds = 10;
-                // Tomamos el PIN plano (ej: 1234), lo encriptamos y reemplazamos el valor antes de tocar pgAdmin
+                
                 usuario.password = bcrypt.hashSync(String(usuario.password), saltRounds);
             }
         },

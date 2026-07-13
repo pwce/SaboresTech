@@ -18,7 +18,6 @@ export const PedidoEntity = new EntitySchema({
             nullable: false,
             default: 0,
         },
-        // para separar los estados en si 
         estadoPago: {
             name: 'estado_pago', 
             type: 'varchar', 
@@ -59,7 +58,7 @@ export const PedidoEntity = new EntitySchema({
             target: 'DetallePedido',
             type: 'one-to-many',
             mappedBy: 'pedido',
-            cascade: true, // Si se borra el pedido, se borran sus detalles automáticamente
+            cascade: true, 
         },
     },    
 });

@@ -3,7 +3,6 @@ import { InsumoEntity } from '../entities/insumo.entity.js';
 
 const insumoRepository = AppDataSource.getRepository(InsumoEntity);
 
-// OBTENER TODO EL INVENTARIO DE INSUMOS
 export async function obtenerInsumos(req, res) {
     try {
         const insumos = await insumoRepository.find({
@@ -22,7 +21,7 @@ export async function obtenerInsumos(req, res) {
     }
 }
 
-// REGISTRAR UN NUEVO INSUMO EN EL SISTEMA
+
 export async function crearInsumo(req, res) {
     try {
         const { nombre, cantidadActual, unidadMedida, disponible } = req.body;
@@ -66,7 +65,7 @@ export async function crearInsumo(req, res) {
     }
 }
 
-// ACTUALIZAR STOCK O DATOS DEL INSUMO (ahora soporta cambiar la disponibilidad booleana)
+
 export async function actualizarInsumo(req, res) {
     try {
         const { id } = req.params;
@@ -101,7 +100,7 @@ export async function actualizarInsumo(req, res) {
     }
 }
 
-// ELIMINAR UN INSUMO
+
 export async function eliminarInsumo(req, res) {
     try {
         const { id } = req.params;
