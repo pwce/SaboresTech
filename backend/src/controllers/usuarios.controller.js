@@ -65,7 +65,8 @@ export async function crearUsuario(req, res) {
         const nuevoUsuario = usuarioRepository.create({
             nombre,
             rut: (rolLower === 'cliente') ? null : rut, 
-            rol: rolLower
+            rol: rolLower,
+            password: passwordFinal
         });
 
         await usuarioRepository.save(nuevoUsuario);

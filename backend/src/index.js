@@ -53,7 +53,7 @@ async function setupApi(){
                 });
 
                 const atendedor = usuarioRepository.create({
-                    nombre: "Atendedora Paz",
+                    nombre: "Paz",
                     rut: "21.725.801-4",
                     password: pinAtendedorEncriptado, 
                     rol: "atendedor"

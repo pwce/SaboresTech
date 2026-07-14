@@ -26,7 +26,7 @@ export const loginPorPin = async (req, res) => {
       
       console.log(`-> Analizando usuario: ${usuario.nombre}`);
       console.log(`   - Hash guardado en BD: ${usuario.password}`);
-      const pinValido = await bcrypt.compare(pin, usuario.password); 
+      const pinValido = await bcrypt.compare(String(pin), usuario.password);
       console.log(`   - ¿Bcrypt dice que coincide?: ${pinValido}`);
       if (pinValido) {
         usuarioAutenticado = usuario;
