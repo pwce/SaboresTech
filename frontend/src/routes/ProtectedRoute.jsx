@@ -21,7 +21,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     return <Navigate to="/" replace />;
   }
   if (allowedRoles && !allowedRoles.includes(rol)) {
-    return <Navigate to={rol === "dueña" ? "/dueña" : "/atendedor"} replace />;
+    return <Navigate to={rol === "dueña" ? "/duena" : "/atendedor"} replace />;
   }
 
   return children;

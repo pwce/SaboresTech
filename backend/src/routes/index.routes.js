@@ -4,6 +4,7 @@ import productosRouter from "./productos.routes.js";
 import usuariosRouter from "./usuarios.routes.js";
 import pedidosRouter from "./pedidos.routes.js";
 import insumosRouter from "./insumos.routes.js";
+import jornadaRouter from "./jornada.routes.js";
 
 
 export function routerApi(app) {
@@ -16,4 +17,5 @@ export function routerApi(app) {
     router.use('/usuarios', usuariosRouter);
     router.use('/pedidos', pedidosRouter);
     router.use('/insumos', insumosRouter );
+    router.use('/jornada', jornadaRouter );
 }

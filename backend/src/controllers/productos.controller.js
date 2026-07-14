@@ -184,6 +184,44 @@ export async function actualizarProducto(req, res) {
     }
 }
 
+// actualizar solo el stock de un producto (usado desde el módulo de Jornada)
+export async function actualizarStockProducto(req, res) {
+    try {
+        const { id } = req.params;
+        const { stock } = req.body;
+
+        if (stock === undefined || Number(stock) < 0) {
+            return res.status(400).json({
+                success: false,
+                mensaje: "Debes indicar una cantidad de stock válida (mayor o igual a 0)"
+            });
+        }
+
+        const producto = await productoRepository.findOneBy({ id: Number(id) });
+        if (!producto) {
+            return res.status(404).json({
+                success: false,
+                mensaje: "El producto no existe"
+            });
+        }
+
+        producto.stock = Number(stock);
+        await productoRepository.save(producto);
+
+        return res.status(200).json({
+            success: true,
+            mensaje: "Stock actualizado con éxito",
+            data: producto
+        });
+    } catch (error) {
+        console.error("Error en actualizarStockProducto:", error);
+        return res.status(500).json({
+            success: false,
+            mensaje: "Error interno al actualizar el stock"
+        });
+    }
+}
+
 // eliminar producto de forma física
 export async function eliminarProducto(req, res) {
     try {

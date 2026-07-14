@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
-import { verificarPin } from "../../api/auth.service.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import PinPad from "./PinPad.jsx";
 
-export default function PinLoginView({ onLoginSuccess }) {
+export default function PinLoginView() {
   const navigate = useNavigate();
+  const { loginConPin } = useAuth();
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
@@ -26,16 +27,10 @@ export default function PinLoginView({ onLoginSuccess }) {
     setCargando(true);
     setError('');
     try {
-      const data = await verificarPin(pin);
-      if (data.success) {
-        sessionStorage.setItem('sabores_carolina_session', JSON.stringify({ token: data.token }));
-        if (onLoginSuccess) onLoginSuccess(data);
-      } else {
-        setError(data.mensaje || 'PIN incorrecto');
-        limpiarTodo();
-      }
+      const rol = await loginConPin(pin);
+      navigate(rol === "dueña" ? "/duena" : "/atendedor", { replace: true });
     } catch (err) {
-      setError('Error al conectar con el servidor');
+      setError(err.response?.data?.mensaje || err.message || 'PIN incorrecto');
       limpiarTodo();
     } finally {
       setCargando(false);

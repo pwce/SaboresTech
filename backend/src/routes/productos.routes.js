@@ -34,10 +34,16 @@ router.get('/', productosController.obtenerProductos);
 router.get('/jornada', productosController.obtenerProductosJornada);
 
 // POST /api/v1/productos para crear uno nuevo (solo atendedor o dueña)
-router.post('/', upload.single('imagen'), validarSchema(productoSchema), productosController.crearProducto);
+router.post('/', verificarToken(['atendedor', 'dueña']), upload.single('imagen'), validarSchema(productoSchema), productosController.crearProducto);
 
 // PUT /api/v1/productos/:id mpdificar un producto
 router.put('/:id', verificarToken(['atendedor', 'dueña']), validarSchema(productoSchema), productosController.actualizarProducto);
+
+// PATCH /api/v1/productos/:id/jornada activar/desactivar un producto del catalogo para la jornada de hoy
+router.patch('/:id/jornada', verificarToken(['atendedor', 'dueña']), productosController.cambiarEstadoJornada);
+
+// PATCH /api/v1/productos/:id/stock actualizar solo la cantidad de stock (sin validar el resto del esquema)
+router.patch('/:id/stock', verificarToken(['atendedor', 'dueña']), productosController.actualizarStockProducto);
 
 // DELETE /api/v1/productos/:i eiminar un producto
 router.delete('/:id', verificarToken(['atendedor', 'dueña']), productosController.eliminarProducto);
