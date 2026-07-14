@@ -2,17 +2,17 @@ import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
 const MODULOS_DUENA = [
-  { key: "jornada", label: "Jornada", icon: "☀️" },
-  { key: "pedidos", label: "Pedidos", icon: "🧾" },
-  { key: "gastos", label: "Gastos y Reembolsos", icon: "💸" },
-  { key: "caja", label: "Control de Caja y Reportes", icon: "📊" },
+  { key: "jornada", label: "Jornada"},
+  { key: "pedidos", label: "Pedidos"},
+  { key: "gastos", label: "Gastos y Reembolsos"},
+  { key: "caja", label: "Control de Caja y Reportes"},
 ];
 
 const MODULOS_ATENDEDOR = [
-  { key: "jornada", label: "Jornada", icon: "☀️" },
-  { key: "pagos", label: "Pagos", icon: "💳" },
-  { key: "pedidos", label: "Pedidos", icon: "🧾" },
-  { key: "gastos", label: "Gastos y Reembolsos", icon: "💸" },
+  { key: "jornada", label: "Jornada",},
+  { key: "pagos", label: "Pagos"},
+  { key: "pedidos", label: "Pedidos"},
+  { key: "gastos", label: "Gastos y Reembolsos"},
 ];
 
 export default function DashboardLayout({ moduloActivo, onCambiarModulo, children }) {

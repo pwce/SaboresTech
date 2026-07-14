@@ -87,45 +87,42 @@ export default function JornadaView() {
   };
 
   const handleConfirmarJornada = async () => {
-    setGuardando(true);
-    setError("");
-    try {
-      const respuesta = await abrirJornada(insumosForm);
-      const nuevaJornada = respuesta.data;
+  setGuardando(true);
+  setError("");
+  try {
 
-      // activamos los productos seleccionados y guardamos su stock inicial
-      const productosSeleccionados = Object.entries(seleccion).filter(([, v]) => v.activo);
-      await Promise.all(
-        productosSeleccionados.map(async ([id, v]) => {
-          await cambiarEstadoJornadaProducto(id, true);
-          if (v.stock !== undefined) {
-            await actualizarStockProducto(id, v.stock);
-          }
-        })
-      );
+    const productosSeleccionados = Object.entries(seleccion)
+      .filter(([, v]) => v.activo)
+      .map(([id, v]) => ({
+        id: Number(id),
+        stock: v.stock ?? 0,
+      }));
 
-      const productosActivados = productos.filter((p) => seleccion[p.id]?.activo);
+    const respuesta = await abrirJornada(insumosForm, productosSeleccionados);
+    const nuevaJornada = respuesta.data;
 
-      setResumen({
-        fechaInicio: nuevaJornada.fechaInicio,
-        insumos: insumosForm,
-        productos: productosActivados.map((p) => ({
-          ...p,
-          stock: seleccion[p.id]?.stock,
-        })),
-      });
+    const productosActivados = productos.filter((p) => seleccion[p.id]?.activo);
 
-      setCreandoJornada(false);
-      setInsumosForm(insumosVacios());
-      setSeleccion({});
-      await cargarTodo();
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.mensaje || "No se pudo crear la jornada. Intenta nuevamente.");
-    } finally {
-      setGuardando(false);
-    }
-  };
+    setResumen({
+      fechaInicio: nuevaJornada.fechaInicio,
+      insumos: insumosForm,
+      productos: productosActivados.map((p) => ({
+        ...p,
+        stock: seleccion[p.id]?.stock ?? 0,
+      })),
+    });
+
+    setCreandoJornada(false);
+    setInsumosForm(insumosVacios());
+    setSeleccion({});
+    await cargarTodo();
+  } catch (err) {
+    console.error(err);
+    setError(err.response?.data?.mensaje || "No se pudo crear la jornada. Intenta nuevamente.");
+  } finally {
+    setGuardando(false);
+  }
+};
 
   const handleFinalizarJornada = async () => {
     if (!window.confirm("¿Seguro que quieres finalizar la jornada actual?")) return;

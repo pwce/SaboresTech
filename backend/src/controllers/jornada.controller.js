@@ -1,5 +1,7 @@
 import { AppDataSource } from '../config/configDb.js';
 import { JornadaEntity } from '../entities/jornada.entity.js';
+import { ProductoEntity } from '../entities/producto.entity.js';
+
 
 const jornadaRepository = AppDataSource.getRepository(JornadaEntity);
 
@@ -48,10 +50,9 @@ export async function obtenerJornadaActiva(req, res) {
     }
 }
 
-
 export async function guardarJornada(req, res) {
     try {
-        const { insumosDisponibles } = req.body;
+        const { insumosDisponibles, productosSeleccionados } = req.body; 
 
         if (!insumosDisponibles) {
             return res.status(400).json({
@@ -62,6 +63,23 @@ export async function guardarJornada(req, res) {
 
         const fechaFinChile = obtenerFechaHoraChile();
         await jornadaRepository.update({ activa: true }, { activa: false, fechaFin: fechaFinChile });
+
+        const productoRepository = AppDataSource.getRepository(ProductoEntity);
+        
+        await productoRepository
+            .createQueryBuilder()
+            .update(ProductoEntity)
+            .set({ enJornada: false, stock: 0 })
+            .execute();
+
+        if (productosSeleccionados && Array.isArray(productosSeleccionados)) {
+            for (const p of productosSeleccionados) {
+                await productoRepository.update(
+                    { id: Number(p.id) },
+                    { enJornada: true, stock: Number(p.stock || 0) }
+                );
+            }
+        }
 
         const nuevaJornada = jornadaRepository.create({
             activa: true,
@@ -74,7 +92,7 @@ export async function guardarJornada(req, res) {
 
         return res.status(201).json({
             success: true,
-            mensaje: "¡Jornada de Sabores de Carolina iniciada con éxito en hora local!",
+            mensaje: "¡Jornada de Sabores de Carolina iniciada con éxito y productos sincronizados!",
             data: nuevaJornada
         });
     } catch (error) {

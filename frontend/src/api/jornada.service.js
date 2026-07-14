@@ -10,11 +10,15 @@ export async function obtenerJornadaActiva() {
 }
 
 /**
- * abre una nueva jornada con los insumos seleccionados
+ * abre una nueva jornada con los insumos y productos seleccionados
  * @param {object} insumosDisponibles
+ * @param {Array} productosSeleccionados
  */
-export async function abrirJornada(insumosDisponibles) {
-  const { data } = await axiosClient.post("/v1/jornada/abrir", { insumosDisponibles });
+export async function abrirJornada(insumosDisponibles, productosSeleccionados) {
+  const { data } = await axiosClient.post("/v1/jornada/abrir", { 
+    insumosDisponibles, 
+    productosSeleccionados 
+  });
   return data;
 }
 

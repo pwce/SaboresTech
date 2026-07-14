@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FRUTAS_DISPONIBLES } from "../data/productos.mock";
+import { FRUTAS_CONFIG } from "../../../features/jornada/jornada.config";
 
 const MAX_FRUTAS = 2;
 
@@ -72,7 +72,7 @@ export default function MilkshakeForm({ onCambiar }) {
           Frutas (hasta {MAX_FRUTAS})
         </legend>
         <div className="grid grid-cols-2 gap-2">
-          {FRUTAS_DISPONIBLES.map((fruta) => {
+          {FRUTAS_CONFIG.map((fruta) => {
             const marcada = frutas.includes(fruta);
             const deshabilitada = !marcada && frutas.length >= MAX_FRUTAS;
             return (
