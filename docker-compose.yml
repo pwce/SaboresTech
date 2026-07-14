@@ -51,7 +51,7 @@ services:
       # PUBLIC_HOST se define en el .env de la raíz: la IP/dominio del servidor donde corre todo el stack.
       VITE_API_URL: http://${PUBLIC_HOST:-localhost}:${BACKEND_PORT:-3000}/api
     ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+      - "${FRONTEND_PORT:-80}:80"
     depends_on:
       - backend
     networks:
