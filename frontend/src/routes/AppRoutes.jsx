@@ -6,6 +6,8 @@ import PinLoginView from "../pages/Auth/PinLoginView.jsx";
 import { useAuth } from "../context/AuthContext";
 import DashboardLayout from "../layouts/DashboardLayout";
 import JornadaView from "../features/jornada/JornadaView";
+import GestionPagos from "../pages/Atendedor/GestionPagos"; 
+import GestionPedidos from "../pages/Admin/GestionPedidos"; 
 
 function ModuloProximamente({ nombre }) {
   return (
@@ -32,20 +34,22 @@ function PanelDashboard() {
   return (
     <DashboardLayout moduloActivo={moduloActivo} onCambiarModulo={setModuloActivo}>
       {moduloActivo === "jornada" && <JornadaView />}
-      {moduloActivo !== "jornada" && (
+      {moduloActivo === "pagos" && <GestionPagos />}
+      {moduloActivo === "pedidos" && <GestionPedidos />}
+      {/*modulos restantes que aún no se implementan*/}
+      {moduloActivo !== "jornada" && moduloActivo !== "pagos" && moduloActivo !== "pedidos" && (
         <ModuloProximamente nombre={TITULOS_MODULO[moduloActivo] || moduloActivo} />
       )}
     </DashboardLayout>
   );
 }
-
 export default function AppRoutes() {
   const { isAuthenticated, rol } = useAuth();
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* pantalla pública de login: si ya hay sesión, salta directo a su panel */}
+        {/* pantalla publica de login*/}
         <Route
           path="/"
           element={
@@ -79,7 +83,7 @@ export default function AppRoutes() {
 
         <Route path="/autoservicio" element={<AutoservicioView />} />
 
-        {/* redirección por defecto si la ruta no existe */}
+        {/*redirección por defecto si la ruta no existe */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

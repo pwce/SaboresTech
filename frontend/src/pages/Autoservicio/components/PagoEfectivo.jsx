@@ -1,30 +1,76 @@
 import { useState } from "react";
 import { useAutoservicio, PASOS } from "../../../context/AutoservicioContext";
+import axiosClient from "../../../api/axiosClient";
 
 export default function PagoEfectivo() {
-  const { total, setPaso, setPedidoConfirmado, reiniciarPedido } = useAutoservicio();
-  const [montoRecibido, setMontoRecibido] = useState("");
+  const { total, carrito, reiniciarPedido } = useAutoservicio();
+  const [pedidoId, setPedidoId] = useState(null);
+  const [numeroJornada, setNumeroJornada] = useState(null);
+  const [enviado, setEnviado] = useState(false);
   const [validado, setValidado] = useState(false);
+  const [vueltoFinal, setVueltoFinal] = useState(0);
 
-  const monto = Number(montoRecibido) || 0;
-  const vuelto = Math.max(0, monto - total);
-  const alcanza = monto >= total;
+  const enviarPedidoPendiente = async () => {
+    try {
+      const productosFormateados = carrito.map((item) => ({
+        producto_id: item.id,
+        cantidad: item.cantidad,
+        personalizaciones: item.personalizaciones || "",
+      }));
 
-  function registrarPago() {
-    if (!alcanza) return;
-    setValidado(true);
-    setPedidoConfirmado(true);
-  }
+      const res = await axiosClient.post("/v1/pedidos", {
+        metodoPago: "efectivo",
+        productos: productosFormateados,
+      });
 
+      if (res.data.success) {
+        setPedidoId(res.data.pedido_id);
+        setNumeroJornada(res.data.numeroJornada);
+        setEnviado(true);
+      }
+    } catch (error) {
+      alert(error.response?.data?.mensaje || "Error al enviar el pedido");
+    }
+  };
+
+  useEffect(() => {
+    if (!enviado || !pedidoId || validado) return;
+
+    const interval = setInterval(async () => {
+      try {
+
+        const res = await axiosClient.get(`/v1/pedidos`);
+        const miPedido = res.data.data.find(p => p.id === pedidoId);
+
+        if (miPedido && miPedido.estadoPago === "validado") {
+          setVueltoFinal(miPedido.vuelto);
+          setValidado(true);
+          clearInterval(interval);
+        }
+      } catch (error) {
+        console.error("Error al consultar estado del pago", error);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [enviado, pedidoId, validado]);
+
+  // pago recibido y validado por el atendedor
   if (validado) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-        <span className="text-6xl">✅</span>
-        <h2 className="text-white font-display text-2xl font-bold">¡Pedido Confirmado!</h2>
-        <p className="text-carbon-300">Tu vuelto es ${vuelto.toLocaleString("es-CL")}</p>
+      <div className="flex flex-col items-center justify-center gap-4 py-16 text-center animate-fade-in">
+        <span className="text-6xl"></span>
+        <h2 className="text-brand-400 font-display text-2xl font-bold">¡Pago Validado!</h2>
+        <p className="text-white text-lg font-medium">Tu pedido es el N° {numeroJornada}</p>
+        <p className="text-green-400 text-lg font-semibold mt-1">
+          "Tu pedido fue validado. En este momento lo estamos preparando"
+        </p>
+        {vueltoFinal > 0 && (
+          <p className="text-carbon-300">Retira tu vuelto de ${vueltoFinal.toLocaleString("es-CL")}</p>
+        )}
         <button
           onClick={reiniciarPedido}
-          className="mt-4 min-h-touch px-6 rounded-full bg-brand-500 text-white font-medium"
+          className="mt-6 min-h-touch px-8 py-3 rounded-full bg-brand-500 text-carbon-900 font-bold transition-transform hover:scale-105"
         >
           Volver al inicio
         </button>
@@ -32,44 +78,42 @@ export default function PagoEfectivo() {
     );
   }
 
+  // Pantalla 2: Pedido ya enviado, esperando activamente al atendedor
+  if (enviado) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-6 py-12 text-center">
+        <div className="w-16 h-16 rounded-full border-4 border-brand-500/30 border-t-brand-500 animate-spin" />
+        <h3 className="text-white font-display text-xl font-bold">
+          Pedido N° {numeroJornada} Registrado
+        </h3>
+        <p className="text-carbon-300 max-w-sm">
+          Por favor, entrega el efectivo al atendedor para validar tu pedido.
+        </p>
+        <p className="text-brand-400 font-bold text-lg">
+          Total a pagar: ${total.toLocaleString("es-CL")}
+        </p>
+      </div>
+    );
+  }
+
+  // boton para confirmar pedido e ir a pagar a caja
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 max-w-md mx-auto">
       <div className="bg-carbon-800 border border-accent/20 rounded-card p-6 text-center">
-        <p className="text-white font-display text-lg">
-          Espera a que el atendedor reciba el dinero
+        <p className="text-white font-display text-lg font-medium">
+          Pagarás en efectivo directamente en caja
         </p>
         <p className="text-carbon-300 text-sm mt-2">
           Total a pagar: <span className="text-brand-400 font-semibold">${total.toLocaleString("es-CL")}</span>
         </p>
       </div>
 
-      {/*simulacion de produccion en la app del atendedor (celular)*/}
-      <div className="border-t border-dashed border-accent/30 pt-6">
-        <p className="text-accent text-xs uppercase tracking-wide mb-3">
-          Simulación · Vista del atendedor
-        </p>
-        <label className="text-carbon-300 text-sm block mb-2">
-          Monto recibido del cliente
-        </label>
-        <input
-          type="number"
-          inputMode="numeric"
-          value={montoRecibido}
-          onChange={(e) => setMontoRecibido(e.target.value)}
-          placeholder="Ej: 5000"
-          className="w-full min-h-touch rounded-lg bg-carbon-800 border border-accent/30 text-white px-4 mb-3"
-        />
-        <p className="text-white mb-4">
-          Vuelto a entregar: <span className="text-brand-400 font-semibold">${vuelto.toLocaleString("es-CL")}</span>
-        </p>
-        <button
-          onClick={registrarPago}
-          disabled={!alcanza}
-          className="w-full min-h-touch-lg rounded-card bg-brand-500 text-white font-display font-bold disabled:opacity-40"
-        >
-          Registrar pago y validar pedido
-        </button>
-      </div>
+      <button
+        onClick={enviarPedidoPendiente}
+        className="w-full min-h-touch-lg rounded-card bg-brand-500 text-carbon-900 font-display font-bold hover:bg-brand-400 transition-transform active:scale-95"
+      >
+        Confirmar y Enviar Pedido a Caja
+      </button>
     </div>
   );
 }

@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # 4. Instalamos las dependencias
-RUN npm install
+RUN npm install --production
 
 # 5. Copiamos el resto del código del backend
 COPY . .
@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 3000
 
 # 7. Comando para iniciar la aplicación
-CMD ["npm", "start"]
+CMD ["npm", "start", "node", "src/index.js"]

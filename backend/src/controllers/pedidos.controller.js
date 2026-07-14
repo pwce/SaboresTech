@@ -2,6 +2,7 @@ import { AppDataSource } from '../config/configDb.js';
 import { PedidoEntity } from '../entities/pedido.entity.js';
 import { DetallePedidoEntity } from '../entities/detallePedido.entity.js';
 import { ProductoEntity } from '../entities/producto.entity.js';
+import { MoreThanOrEqual } from 'typeorm';
 
 const pedidoRepository = AppDataSource.getRepository(PedidoEntity);
 const detalleRepository = AppDataSource.getRepository(DetallePedidoEntity);
@@ -23,7 +24,7 @@ export async function crearPedido(req, res) {
         let totalPedido = 0;
         const listaDetallesA_Guardar = [];
 
-        // validar cada producto enviado y calcular los costos reales desde la base de datos
+        // validar cada producto enviado y calcular los costos reales
         for (const item of productos) {
             const prodReal = await productoRepository.findOneBy({ id: Number(item.producto_id) });
             
@@ -71,35 +72,35 @@ export async function crearPedido(req, res) {
                 personalizaciones: item.personalizaciones || '' 
             });
         }
+        
+        const inicioHoy = new Date();
+        inicioHoy.setHours(0, 0, 0, 0); 
 
-        // lógica de vuelto y estados financieros iniciales
+        const pedidosHoy = await pedidoRepository.count({
+            where: {
+                fecha: MoreThanOrEqual(inicioHoy)
+            }
+        });
+        const nuevoNumeroJornada = pedidosHoy + 1;
+
         let vueltoCalculado = 0;
         let estadoPagoInicial = 'pendiente';
         let estadoCocinaInicial = 'en_espera';
-
-        if (metodoPago === 'efectivo' && montoRecibido !== undefined) {
-            if (montoRecibido < totalPedido) {
-                return res.status(400).json({
-                    success: false,
-                    mensaje: `El monto recibido ($${montoRecibido}) es menor al total de $${totalPedido}`
-                });
-            }
-            vueltoCalculado = montoRecibido - totalPedido;
-            estadoPagoInicial = 'validado'; 
-            estadoCocinaInicial = 'en_preparacion'; 
-        } else if (metodoPago === 'tarjeta' || metodoPago === 'transferencia') {
+        
+        if (metodoPago === 'tarjeta') {
             estadoPagoInicial = 'validado';
             estadoCocinaInicial = 'en_preparacion';
         }
 
-
         const nuevoPedido = pedidoRepository.create({
+            numeroJornada: nuevoNumeroJornada, 
+            fecha: new Date(),                 
             total: totalPedido,
             metodoPago,
             estadoPago: estadoPagoInicial,
             estadoCocina: estadoCocinaInicial,
-            montoRecibido: montoRecibido || 0,
-            vuelto: vueltoCalculado,
+            montoRecibido: 0, 
+            vuelto: 0,
             usuario: usuario_id ? { id: Number(usuario_id) } : null
         });
         await pedidoRepository.save(nuevoPedido);
@@ -120,6 +121,7 @@ export async function crearPedido(req, res) {
             success: true,
             mensaje: "¡Pedido enviado con éxito!",
             pedido_id: nuevoPedido.id,
+            numeroJornada: nuevoNumeroJornada,
             total: totalPedido,
             vuelto: vueltoCalculado
         });
@@ -136,11 +138,17 @@ export async function crearPedido(req, res) {
 
 export async function obtenerPedidos(req, res) {
     try {
-        const pedidos = await pedidoRepository.find({
-            relations: ['usuario'],
-            order: { fecha: 'DESC' } 
-        });
+        const { estadoCocina, estadoPago } = req.query;
 
+        const whereFilters = {};
+        if (estadoCocina) whereFilters.estadoCocina = estadoCocina;
+        if (estadoPago) whereFilters.estadoPago = estadoPago;
+
+        const pedidos = await pedidoRepository.find({
+            where: whereFilters,
+            relations: ['usuario'],
+            order: { fecha: 'ASC' } 
+        });
         
         const pedidosConDetalles = await Promise.all(pedidos.map(async (pedido) => {
             const detalles = await detalleRepository.find({
@@ -180,7 +188,7 @@ export async function cambiarEstadoPedido(req, res) {
             });
         }
 
-        // Manejo del estado de cocina 
+        // manejo del estado de cocina 
         if (nuevoEstado) {
             const estadosCocinaValidos = ['en_espera', 'en_preparacion', 'listo', 'entregado'];
             if (!estadosCocinaValidos.includes(nuevoEstado)) {
@@ -192,7 +200,7 @@ export async function cambiarEstadoPedido(req, res) {
             pedido.estadoCocina = nuevoEstado;
         }
 
-        // Manejo del estado de Pago
+        // manejo del estado de pago
         if (nuevoEstadoPago) {
             if (!['pendiente', 'validado'].includes(nuevoEstadoPago)) {
                 return res.status(400).json({ success: false, mensaje: "Estado de pago no válido." });
@@ -212,7 +220,7 @@ export async function cambiarEstadoPedido(req, res) {
                     pedido.vuelto = efectivo - pedido.total;
                 }
                 pedido.estadoPago = 'validado';
-                pedido.estadoCocina = 'en_preparacion'; 
+                pedido.estadoCocina = 'en_preparacion';
             }
         }
 
@@ -220,7 +228,7 @@ export async function cambiarEstadoPedido(req, res) {
 
         return res.status(200).json({
             success: true,
-            mensaje: `El pedido #${id} fue actualizado con éxito`,
+            mensaje: `El pedido #${pedido.numeroJornada} fue actualizado con éxito`,
             data: pedido
         });
     } catch (error) {

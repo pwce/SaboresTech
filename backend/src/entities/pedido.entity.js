@@ -9,9 +9,14 @@ export const PedidoEntity = new EntitySchema({
             type: 'int',
             generated: true,
         },
+        numeroJornada: {
+            type: "int",
+            nullable: false,
+        },
         fecha: {
-            type: 'timestamp',
-            default: () => 'CURRENT_TIMESTAMP',
+            name: 'fecha_pedido',
+            type: 'timestamp with time zone', 
+            nullable: false,
         },
         total: {
             type: 'int',
