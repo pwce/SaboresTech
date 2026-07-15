@@ -1,3 +1,4 @@
+// SandwichForm.jsx
 import { useState } from "react";
 
 export default function SandwichForm({ onCambiar }) {

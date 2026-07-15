@@ -1,3 +1,4 @@
+// FrappeForm.jsx
 import { useState } from "react";
 
 const SiNoToggle = ({ label, valor, onChange }) => (

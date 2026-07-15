@@ -1,3 +1,4 @@
+// index.routes.js
 import { Router } from "express";
 import authRoutes from "./auth.routes.js";
 import productosRouter from "./productos.routes.js";

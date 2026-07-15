@@ -1,3 +1,4 @@
+// usuario.entity.js
 import { EntitySchema } from 'typeorm';
 import bcrypt from 'bcrypt';
 

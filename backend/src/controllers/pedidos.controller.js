@@ -1,3 +1,4 @@
+// pedidos.controller.js
 import { AppDataSource } from '../config/configDb.js';
 import { PedidoEntity } from '../entities/pedido.entity.js';
 import { DetallePedidoEntity } from '../entities/detallePedido.entity.js';

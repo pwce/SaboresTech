@@ -1,3 +1,4 @@
+// jornada.entity.js
 import { EntitySchema } from 'typeorm';
 
 export const JornadaEntity = new EntitySchema({

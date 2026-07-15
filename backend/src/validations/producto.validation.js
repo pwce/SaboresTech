@@ -1,3 +1,4 @@
+// producto.validation.js
 import Joi from 'joi';
 
 const productoSchema = Joi.object({

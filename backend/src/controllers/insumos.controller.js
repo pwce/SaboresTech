@@ -1,3 +1,4 @@
+// insumos.controller.js
 import { AppDataSource } from '../config/configDb.js';
 import { InsumoEntity } from '../entities/insumo.entity.js';
 

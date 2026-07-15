@@ -1,3 +1,4 @@
+// PagoEfectivo.jsx
 import { useState } from "react";
 import { useAutoservicio, PASOS } from "../../../context/AutoservicioContext";
 import axiosClient from "../../../api/axiosClient";

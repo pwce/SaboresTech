@@ -1,3 +1,4 @@
+// insumo.validation.js
 import Joi from 'joi';
 
 const insumoSchema = Joi.object({

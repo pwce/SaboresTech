@@ -1,3 +1,4 @@
+// productos.service.js
 import axiosClient from "./axiosClient";
 
 /**
@@ -24,6 +25,35 @@ export async function crearProducto(producto) {
   const { data } = await axiosClient.post("/v1/productos", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return data;
+}
+
+/**
+ * actualiza un producto existente del catálogo maestro (nombre, precio, categoría,
+ * si controla stock y/o su imagen)
+ * @param {number} id
+ * @param {{ nombre?: string, precio?: number, categoria?: string, controlaStock?: boolean, imagen?: File }} cambios
+ */
+export async function actualizarProducto(id, cambios) {
+  const formData = new FormData();
+  if (cambios.nombre !== undefined) formData.append("nombre", cambios.nombre);
+  if (cambios.precio !== undefined) formData.append("precio", String(cambios.precio));
+  if (cambios.categoria !== undefined) formData.append("categoria", cambios.categoria);
+  if (cambios.controlaStock !== undefined) formData.append("controlaStock", String(cambios.controlaStock));
+  if (cambios.imagen) formData.append("imagen", cambios.imagen);
+
+  const { data } = await axiosClient.put(`/v1/productos/${id}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data.data ?? data;
+}
+
+/**
+ * elimina un producto del catálogo maestro de forma definitiva
+ * @param {number} id
+ */
+export async function eliminarProducto(id) {
+  const { data } = await axiosClient.delete(`/v1/productos/${id}`);
   return data;
 }
 

@@ -1,3 +1,4 @@
+// insumos.routes.js
 import express from 'express';
 import * as insumosController from '../controllers/insumos.controller.js';
 import { validarSchema } from '../middlewares/validador.middleware.js';

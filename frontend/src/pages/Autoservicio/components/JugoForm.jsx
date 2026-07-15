@@ -1,3 +1,4 @@
+// JugoForm.jsx
 import { useState } from "react";
 import { FRUTAS_CONFIG } from "../../../features/jornada/jornada.config";
 

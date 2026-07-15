@@ -1,3 +1,4 @@
+// MenuScreen.jsx
 import { useState, useMemo, useEffect } from "react";
 import { obtenerProductos } from "../../api/productos.service";
 import CategoriaTabs from "./components/CategoriaTabs";

@@ -1,3 +1,4 @@
+// GestionPedidos.jsx
 import { useEffect, useState } from "react";
 import axiosClient from "../../api/axiosClient";
 

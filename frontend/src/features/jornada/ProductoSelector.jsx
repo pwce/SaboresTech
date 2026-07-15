@@ -1,16 +1,6 @@
 import React, { useState } from "react";
 import { CATEGORIAS_PRODUCTO, esProductoDeStockFijoPorNombre } from "./jornada.config";
-import { calcularDisponibilidadBebestibles, razonBloqueo } from "./reglasDisponibilidad";
-
-const TIPOS_SIN_STOCK = ["milkshake", "jugo natural", "jugo", "frappé", "frappe"];
-
-function tipoBebestibleSinStock(nombre = "") {
-  const n = nombre.toLowerCase();
-  if (n.includes("milkshake")) return "milkshakes";
-  if (n.includes("jugo")) return "jugosNaturales";
-  if (n.includes("frappe") || n.includes("frappé")) return "frappes";
-  return null;
-}
+import { evaluarDisponibilidadProducto } from "./reglasDisponibilidad";
 
 export default function ProductoSelector({
   productos,
@@ -19,13 +9,79 @@ export default function ProductoSelector({
   onToggle,
   onCambiarStock,
   onCrearProducto,
+  onActualizarProducto,
+  onEliminarProducto,
 }) {
-  const disponibilidad = calcularDisponibilidadBebestibles(insumos);
   const [formAbierto, setFormAbierto] = useState(false);
   const [nuevo, setNuevo] = useState({ nombre: "", precio: "", categoria: "Salado", controlaStock: true });
   const [imagenFile, setImagenFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [creando, setCreando] = useState(false);
+
+  // edición inline de un producto ya creado
+  const [editandoId, setEditandoId] = useState(null);
+  const [edicion, setEdicion] = useState({ nombre: "", precio: "", categoria: "Salado", controlaStock: true });
+  const [edicionImagenFile, setEdicionImagenFile] = useState(null);
+  const [edicionPreview, setEdicionPreview] = useState("");
+  const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+  const [eliminandoId, setEliminandoId] = useState(null);
+
+  const iniciarEdicion = (p) => {
+    setEditandoId(p.id);
+    setEdicion({
+      nombre: p.nombre,
+      precio: p.precio,
+      categoria: p.categoria,
+      controlaStock: !!p.controlaStock,
+    });
+    setEdicionImagenFile(null);
+    setEdicionPreview("");
+  };
+
+  const cancelarEdicion = () => {
+    setEditandoId(null);
+    setEdicionImagenFile(null);
+    setEdicionPreview("");
+  };
+
+  const handleEdicionImagenChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setEdicionImagenFile(file);
+      setEdicionPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleGuardarEdicion = async (id) => {
+    if (!edicion.nombre || !edicion.precio) return;
+    setGuardandoEdicion(true);
+    try {
+      await onActualizarProducto(id, {
+        nombre: edicion.nombre,
+        precio: edicion.precio,
+        categoria: edicion.categoria,
+        controlaStock: edicion.controlaStock,
+        imagen: edicionImagenFile,
+      });
+      cancelarEdicion();
+    } catch (error) {
+      console.error("Error al actualizar el producto:", error);
+    } finally {
+      setGuardandoEdicion(false);
+    }
+  };
+
+  const handleEliminar = async (p) => {
+    if (!window.confirm(`¿Eliminar "${p.nombre}" del catálogo? Esta acción no se puede deshacer.`)) return;
+    setEliminandoId(p.id);
+    try {
+      await onEliminarProducto(p.id);
+    } catch (error) {
+      console.error("Error al eliminar el producto:", error);
+    } finally {
+      setEliminandoId(null);
+    }
+  };
 
   const productosPorCategoria = CATEGORIAS_PRODUCTO.map((cat) => ({
     categoria: cat,
@@ -39,7 +95,7 @@ export default function ProductoSelector({
     const file = e.target.files[0];
     if (file) {
       setImagenFile(file);
-      setPreview(URL.createObjectURL(file)); 
+      setPreview(URL.createObjectURL(file));
     }
   };
 
@@ -54,7 +110,7 @@ export default function ProductoSelector({
         precio: nuevo.precio,
         categoria: nuevo.categoria,
         controlaStock: nuevo.controlaStock,
-        imagen: imagenFile 
+        imagen: imagenFile,
       });
 
       setNuevo({ nombre: "", precio: "", categoria: "Salado", controlaStock: true });
@@ -68,12 +124,103 @@ export default function ProductoSelector({
     }
   };
 
+  const renderFormularioEdicion = (p) => (
+    <form
+      key={p.id}
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleGuardarEdicion(p.id);
+      }}
+      className="col-span-full bg-carbon-900 border border-brand-500 rounded-card p-4 space-y-3"
+    >
+      <div className="grid sm:grid-cols-2 gap-3">
+        <input
+          type="text"
+          placeholder="Nombre del producto"
+          value={edicion.nombre}
+          onChange={(e) => setEdicion({ ...edicion, nombre: e.target.value })}
+          className="bg-carbon-900 border border-carbon-600 rounded px-3 py-2 text-white text-sm"
+          required
+        />
+        <input
+          type="number"
+          min="1"
+          placeholder="Precio"
+          value={edicion.precio}
+          onChange={(e) => setEdicion({ ...edicion, precio: e.target.value })}
+          className="bg-carbon-900 border border-carbon-600 rounded px-3 py-2 text-white text-sm"
+          required
+        />
+        <select
+          value={edicion.categoria}
+          onChange={(e) => setEdicion({ ...edicion, categoria: e.target.value })}
+          className="bg-carbon-900 border border-carbon-600 rounded px-3 py-2 text-white text-sm"
+        >
+          {CATEGORIAS_PRODUCTO.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <label className="flex items-center gap-2 text-sm text-carbon-200">
+          <input
+            type="checkbox"
+            checked={edicion.controlaStock}
+            onChange={(e) => setEdicion({ ...edicion, controlaStock: e.target.checked })}
+            className="w-5 h-5 accent-brand-500"
+          />
+          Tiene stock fijo
+        </label>
+
+        <div className="sm:col-span-2 flex items-center gap-4 bg-carbon-900/50 p-3 rounded-card border border-carbon-700">
+          <div className="flex-1">
+            <label className="block text-xs text-carbon-300 mb-1">Reemplazar imagen (opcional)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleEdicionImagenChange}
+              className="block w-full text-xs text-carbon-400
+                file:mr-4 file:py-1.5 file:px-3
+                file:rounded-card file:border-0
+                file:text-xs file:font-semibold
+                file:bg-brand-500/10 file:text-brand-400
+                hover:file:bg-brand-500/20 cursor-pointer"
+            />
+          </div>
+          <img
+            src={edicionPreview || p.imagen || "https://via.placeholder.com/60"}
+            alt={p.nombre}
+            className="w-16 h-16 object-cover rounded-card border border-carbon-600 bg-carbon-900"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <button
+          type="submit"
+          disabled={guardandoEdicion}
+          className="px-4 py-2 rounded-card bg-brand-500 text-carbon-900 font-semibold text-sm disabled:opacity-60"
+        >
+          {guardandoEdicion ? "Guardando..." : "Guardar cambios"}
+        </button>
+        <button
+          type="button"
+          onClick={cancelarEdicion}
+          className="px-4 py-2 rounded-card border border-carbon-600 text-carbon-200 text-sm"
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
+  );
+
   const renderProducto = (p) => {
-    const tipoBeb = tipoBebestibleSinStock(p.nombre);
-    const esSinStock = tipoBeb !== null;
-    const bloqueado = esSinStock && !disponibilidad[tipoBeb];
+    if (editandoId === p.id) return renderFormularioEdicion(p);
+
+    const { esSinStock, bloqueado, razon } = evaluarDisponibilidadProducto(p.nombre, insumos);
     const esStockFijo = !esSinStock && (p.controlaStock ?? esProductoDeStockFijoPorNombre(p.nombre));
     const sel = seleccion[p.id] || { activo: false, stock: 0 };
+    const eliminando = eliminandoId === p.id;
 
     return (
       <div
@@ -91,11 +238,13 @@ export default function ProductoSelector({
             className="w-5 h-5 accent-brand-500"
           />
           {p.imagen && (
-            <img 
-              src={p.imagen} 
-              alt={p.nombre} 
+            <img
+              src={p.imagen}
+              alt={p.nombre}
               className="w-10 h-10 object-cover rounded bg-carbon-900 border border-carbon-700"
-              onError={(e) => { e.target.src = 'https://via.placeholder.com/60'; }}
+              onError={(e) => {
+                e.target.src = "https://via.placeholder.com/60";
+              }}
             />
           )}
           <span className="truncate">
@@ -118,10 +267,28 @@ export default function ProductoSelector({
         )}
 
         {bloqueado && (
-          <span className="text-xs text-estado-agotado shrink-0 max-w-[9rem] text-right">
-            {razonBloqueo(tipoBeb, disponibilidad)}
-          </span>
+          <span className="text-xs text-estado-agotado shrink-0 max-w-[9rem] text-right">{razon}</span>
         )}
+
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            title="Editar producto"
+            onClick={() => iniciarEdicion(p)}
+            className="w-8 h-8 flex items-center justify-center rounded-card border border-carbon-600 text-carbon-300 hover:text-brand-400 hover:border-brand-400 text-sm"
+          >
+            ✎
+          </button>
+          <button
+            type="button"
+            title="Eliminar producto"
+            disabled={eliminando}
+            onClick={() => handleEliminar(p)}
+            className="w-8 h-8 flex items-center justify-center rounded-card border border-carbon-600 text-carbon-300 hover:text-estado-agotado hover:border-estado-agotado text-sm disabled:opacity-50"
+          >
+            {eliminando ? "…" : "🗑"}
+          </button>
+        </div>
       </div>
     );
   };
@@ -219,7 +386,6 @@ export default function ProductoSelector({
                   />
                 )}
               </div>
-
             </div>
             <div className="flex gap-3">
               <button

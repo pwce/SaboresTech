@@ -1,3 +1,4 @@
+// auth.routes.js
 import { Router } from 'express';
 import { loginPorPin } from '../controllers/auth.controller.js';
 

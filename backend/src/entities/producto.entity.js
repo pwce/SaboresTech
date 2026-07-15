@@ -1,3 +1,4 @@
+// producto.entity.js
 import { EntitySchema } from 'typeorm';
 
 export const ProductoEntity = new EntitySchema({

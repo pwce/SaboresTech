@@ -1,3 +1,4 @@
+// insumo.entity.js
 import { EntitySchema } from 'typeorm';
 
 export const InsumoEntity = new EntitySchema({

@@ -1,3 +1,4 @@
+// InsumosForm.jsx
 import React from "react";
 import {
   ENVASES_CONFIG,
@@ -13,7 +14,7 @@ function ToggleChip({ activo, label, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-2 rounded-full text-sm font-semibold border transition-colors min-h-touch
+      className={`px-4 py-2 rounded-card text-sm font-semibold border transition-colors min-h-touch
         ${
           activo
             ? "bg-brand-500 border-brand-500 text-carbon-900"
@@ -51,7 +52,7 @@ export default function InsumosForm({ insumos, onChange }) {
     <div>
       <Seccion titulo="Envases (define si se pueden vender bebestibles)">
         {ENVASES_CONFIG.map((e) => (
-          <div key={e.key} className="flex items-center gap-2 bg-carbon-800 border border-carbon-600 rounded-full px-4 py-2">
+          <div key={e.key} className="flex items-center gap-2 bg-carbon-800 border border-carbon-600 rounded-card px-4 py-2">
             <label className="text-sm text-carbon-200 font-semibold">{e.label}</label>
             <input
               type="number"

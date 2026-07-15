@@ -1,3 +1,4 @@
+// pedidos.routes.js
 import express from 'express';
 import * as pedidosController from '../controllers/pedidos.controller.js';
 import { validarSchema } from '../middlewares/validador.middleware.js';

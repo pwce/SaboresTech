@@ -1,3 +1,4 @@
+// CarritoScreen.jsx
 import { useAutoservicio, PASOS } from "../../context/AutoservicioContext";
 
 export default function CarritoScreen() {

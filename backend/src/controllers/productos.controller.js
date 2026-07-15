@@ -1,3 +1,4 @@
+// productos.controller.js 
 import { AppDataSource } from '../config/configDb.js';
 import { ProductoEntity } from '../entities/producto.entity.js';
 
@@ -95,7 +96,7 @@ function determinarTipoProducto(nombre) {
     if (n.includes("sandwich") || n.includes("sándwich")) return "sandwich";
     if (n.includes("jugo")) return "jugo";
     if (n.includes("milkshake")) return "milkshake";
-    if (n.includes("frappe") || n.includes("frappé")) return "frappe";
+    if (n.includes("frap")) return "frappe";
     return "simple"; 
 }
 
@@ -151,7 +152,7 @@ export async function crearProducto(req, res) {
 export async function actualizarProducto(req, res) {
     try {
         const { id } = req.params; 
-        const { nombre, precio, category, disponible, imagenUrl, enJornada } = req.body; 
+        const { nombre, precio, categoria, controlaStock, disponible, imagenUrl, enJornada } = req.body; 
 
         const producto = await productoRepository.findOneBy({ id: Number(id) });
         if (!producto) {
@@ -162,18 +163,34 @@ export async function actualizarProducto(req, res) {
         }
 
         if (nombre !== undefined) producto.nombre = nombre;
-        if (precio !== undefined) producto.precio = precio;
-        if (category !== undefined) producto.categoria = category;
+        if (precio !== undefined) producto.precio = Number(precio);
+        if (categoria !== undefined) producto.categoria = categoria;
+        if (controlaStock !== undefined) producto.controlaStock = controlaStock === 'true' || controlaStock === true;
         if (disponible !== undefined) producto.disponible = disponible;
-        if (imagenUrl !== undefined) producto.imagenUrl = imagenUrl; 
         if (enJornada !== undefined) producto.enJornada = enJornada;
+
+        if (req.file) {
+            producto.imagenUrl = `http://localhost:3000/uploads/${req.file.filename}`;
+        } else if (imagenUrl !== undefined) {
+            producto.imagenUrl = imagenUrl;
+        }
 
         await productoRepository.save(producto);
 
         return res.status(200).json({
             success: true,
             mensaje: "Producto actualizado con éxito",
-            data: producto
+            data: {
+                id: producto.id,
+                nombre: producto.nombre,
+                precio: producto.precio,
+                categoria: producto.categoria,
+                disponible: producto.disponible,
+                controlaStock: producto.controlaStock,
+                stock: producto.stock,
+                enJornada: producto.enJornada ?? false,
+                imagen: producto.imagenUrl || 'https://via.placeholder.com/60'
+            }
         });
     } catch (error) {
         console.error("Error en actualizarProducto:", error);

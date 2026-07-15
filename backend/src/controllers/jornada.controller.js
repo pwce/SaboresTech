@@ -1,3 +1,4 @@
+// jornada.controller.js
 import { AppDataSource } from '../config/configDb.js';
 import { JornadaEntity } from '../entities/jornada.entity.js';
 import { ProductoEntity } from '../entities/producto.entity.js';
@@ -76,8 +77,8 @@ export async function guardarJornada(req, res) {
             for (const p of productosSeleccionados) {
                 await productoRepository.update(
                     { id: Number(p.id) },
-                    { enJornada: true, stock: Number(p.stock || 0) }
-                );
+                    { enJornada: true, stock: p.stock != null ? Number(p.stock) : 0 }
+              );
             }
         }
 

@@ -1,3 +1,4 @@
+// WelcomeScreen.jsx
 import { useAutoservicio, PASOS } from "../../context/AutoservicioContext";
 
 export default function WelcomeScreen() {

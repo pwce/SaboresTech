@@ -1,3 +1,4 @@
+// usuarios.routes.js
 import express from 'express';
 import * as usuariosController from '../controllers/usuarios.controller.js';
 import { validarSchema } from '../middlewares/validador.middleware.js';

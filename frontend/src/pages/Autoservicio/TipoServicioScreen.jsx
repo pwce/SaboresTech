@@ -1,3 +1,4 @@
+// TipoServicioScreen.jsx
 import { useAutoservicio, PASOS } from "../../context/AutoservicioContext";
 
 const OPCIONES = [

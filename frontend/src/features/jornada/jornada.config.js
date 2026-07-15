@@ -1,5 +1,3 @@
-// estructura base de insumos de una jornada nueva.
-// se mantiene alineada con las claves que espera src/utils/helperRecetas.js
 export function insumosVacios() {
   return {
     envases: { vasos: 0, tapas: 0, bombillas: 0 },
@@ -16,6 +14,7 @@ export function insumosVacios() {
     endulzantes: { azucar: false, endulzante: false },
     crema: { chantilly: false },
     extras: {
+      hielo: false,
       aguaEmbotellada: false,
       café: false,
       chocolatepolvo: false,
@@ -25,7 +24,7 @@ export function insumosVacios() {
       menta: false,
       salsas: false,
     },
-    agotados: [], // claves "grupo.item" marcadas como agotadas manualmente durante la jornada
+    agotados: [],
   };
 }
 
@@ -58,6 +57,7 @@ export const ENDULZANTES_CONFIG = [
 export const CREMA_CONFIG = [{ key: "chantilly", label: "Crema chantilly" }];
 
 export const EXTRAS_CONFIG = [
+  { key: "hielo", label: "Hielo" },
   { key: "aguaEmbotellada", label: "Agua embotellada" },
   { key: "café", label: "Café" },
   { key: "chocolatepolvo", label: "Chocolate en polvo" },
@@ -68,10 +68,11 @@ export const EXTRAS_CONFIG = [
   { key: "salsas", label: "Salsas" },
 ];
 
-// categorías de productos que se muestran en la jornada
+// categorias de productos que se muestran en la jornada
 export const CATEGORIAS_PRODUCTO = ["Salado", "Dulce", "Bebestibles"];
 
 // nombres de productos que por definición del negocio SIEMPRE tienen stock fijo
+// (bebidas embotelladas/enlatadas, comida hecha con anticipación, etc.)
 export const PRODUCTOS_STOCK_FIJO = [
   "pizza",
   "empanada",
@@ -84,10 +85,83 @@ export const PRODUCTOS_STOCK_FIJO = [
   "agua mineral",
 ];
 
-// tipos de bebestible que dependen de la disponibilidad de insumos de la jornada
-export const BEBESTIBLES_SIN_STOCK_FIJO = ["milkshake", "jugo natural", "frappé"];
-
 export function esProductoDeStockFijoPorNombre(nombre = "") {
   const n = nombre.toLowerCase();
   return PRODUCTOS_STOCK_FIJO.some((p) => n.includes(p));
+}
+
+
+export const RECETAS_BEBESTIBLES = [
+  {
+    id: "milkshakes",
+    keywords: ["milkshake"],
+    requiere: { frutas: "alguna", leches: "alguna" },
+    mensajeFaltante: "Faltan frutas y/o leche para preparar milkshakes.",
+  },
+  {
+    id: "jugosNaturales",
+    keywords: ["jugo"],
+    requiere: { frutas: "alguna" },
+    mensajeFaltante: "Falta seleccionar al menos una fruta.",
+  },
+  {
+    id: "frappeChocomenta",
+    keywords: ["chocomenta"],
+    requiere: { leches: "alguna", hielo: true, extras: ["chocolatepolvo", "menta"] },
+    mensajeFaltante: "Faltan leche, hielo, chocolate en polvo o menta.",
+  },
+  {
+    id: "frappeOreo",
+    keywords: ["oreo"],
+    requiere: { leches: "alguna", hielo: true, extras: ["galletas_oreo"] },
+    mensajeFaltante: "Faltan leche, hielo o galletas Oreo.",
+  },
+  {
+    id: "frappeMatcha",
+    keywords: ["matcha"],
+    requiere: { leches: "alguna", hielo: true, extras: ["matcha"] },
+    mensajeFaltante: "Faltan leche, hielo o matcha.",
+  },
+  {
+    id: "frappeVainilla",
+    keywords: ["vainilla"],
+    requiere: { leches: "alguna", hielo: true, extras: ["vainilla"] },
+    mensajeFaltante: "Faltan leche, hielo o vainilla en polvo.",
+  },
+  {
+    id: "frappeFrutilla",
+    keywords: ["frutilla"],
+    requiere: { leches: "alguna", hielo: true, frutas: ["frutilla"] },
+    mensajeFaltante: "Faltan leche, hielo o frutilla.",
+  },
+  {
+    id: "chocofrape",
+    keywords: ["chocofrap", "choco frap"],
+    requiere: { leches: "alguna", hielo: true, extras: ["chocolatepolvo"] },
+    mensajeFaltante: "Faltan leche, hielo o chocolate en polvo.",
+  },
+  {
+    id: "frapuccino",
+    keywords: ["frapuccino", "frappuccino"],
+    requiere: { leches: "alguna", hielo: true, extras: ["café"] },
+    mensajeFaltante: "Faltan leche, hielo o café.",
+  },
+  {
+    // fallback genérico: cualquier otro producto con "frap" en el nombre que no
+    // haya calzado arriba (evita que un frappé nuevo quede sin regla y se venda igual)
+    id: "frappeGenerico",
+    keywords: ["frap"],
+    requiere: { leches: "alguna", hielo: true },
+    mensajeFaltante: "Faltan leche y/o hielo.",
+  },
+];
+
+/**
+ * encuentra la receta que corresponde a un producto según su nombre.
+ * @param {string} nombre
+ * @returns {object|null}
+ */
+export function obtenerRecetaBebestible(nombre = "") {
+  const n = nombre.toLowerCase();
+  return RECETAS_BEBESTIBLES.find((r) => r.keywords.some((k) => n.includes(k))) || null;
 }
