@@ -10,6 +10,7 @@ import JornadaView from "../features/jornada/JornadaView";
 import GestionPagos from "../pages/Atendedor/GestionPagos"; 
 import GestionPedidos from "../pages/Admin/GestionPedidos"; 
 import GestionGastos from "../pages/Gastos/GestionGastos";
+import GestionCaja from "../pages/Caja/GestionCaja";
 
 function ModuloProximamente({ nombre }) {
   return (
@@ -39,8 +40,9 @@ function PanelDashboard() {
       {moduloActivo === "pagos" && <GestionPagos />}
       {moduloActivo === "pedidos" && <GestionPedidos />}
       {moduloActivo === "gastos" && <GestionGastos />}
+      {moduloActivo === "caja" && <GestionCaja />}
       {/*modulos restantes que aún no se implementan*/}
-      {moduloActivo !== "jornada" && moduloActivo !== "pagos" && moduloActivo !== "pedidos" && moduloActivo !== "gastos" && (
+      {moduloActivo !== "jornada" && moduloActivo !== "pagos" && moduloActivo !== "pedidos" && moduloActivo !== "gastos" && moduloActivo !== "caja" && (
         <ModuloProximamente nombre={TITULOS_MODULO[moduloActivo] || moduloActivo} />
       )}
     </DashboardLayout>
