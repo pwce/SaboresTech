@@ -60,6 +60,13 @@ export const PedidoEntity = new EntitySchema({
             nullable: true, 
             onDelete: 'SET NULL',
         },
+        jornada: {
+            target: 'Jornada',
+            type: 'many-to-one',
+            joinColumn: { name: 'jornada_id' },
+            nullable: true,
+            onDelete: 'SET NULL',
+        },
         detalles: {
             target: 'DetallePedido',
             type: 'one-to-many',

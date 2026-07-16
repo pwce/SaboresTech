@@ -1,10 +1,12 @@
 // ProductoModal.jsx
 import { useState } from "react";
 import { useAutoservicio } from "../../../context/AutoservicioContext";
+import { obtenerOpcionesDisponibles } from "../../../features/jornada/reglasDisponibilidad";
 import MilkshakeForm from "./MilkshakeForm";
 import JugoForm from "./JugoForm";
 import FrappeForm from "./FrappeForm";
 import SandwichForm from "./SandwichForm";
+import { IconCerrar } from "../../../components/Icons";
 
 const FORMULARIOS = {
   milkshake: MilkshakeForm,
@@ -13,12 +15,13 @@ const FORMULARIOS = {
   sandwich: SandwichForm,
 };
 
-export default function ProductoModal({ producto, onCerrar }) {
+export default function ProductoModal({ producto, insumosJornada, onCerrar }) {
   const { agregarAlCarrito } = useAutoservicio();
   const [opciones, setOpciones] = useState({ resumen: "" });
   const [cantidad, setCantidad] = useState(1);
 
   const Formulario = FORMULARIOS[producto.tipo];
+  const opcionesDisponibles = obtenerOpcionesDisponibles(insumosJornada);
 
   function aceptar() {
     agregarAlCarrito({
@@ -61,20 +64,20 @@ export default function ProductoModal({ producto, onCerrar }) {
             aria-label="Cerrar"
             className="w-10 h-10 rounded-full bg-carbon-700 text-white flex items-center justify-center"
           >
-            ✕
+            <IconCerrar className="w-5 h-5" />
           </button>
         </div>
 
         {Formulario ? (
-          <Formulario onCambiar={setOpciones} />
+          <Formulario onCambiar={setOpciones} {...opcionesDisponibles} />
         ) : (
           <p className="text-carbon-300 text-sm">
             Este producto no requiere personalización adicional.
           </p>
         )}
 
-        <div className="flex items-center justify-between bg-carbon-900/60 border border-carbon-700 rounded-card px-4 py-3">
-          <span className="text-carbon-200 text-sm font-medium">Cantidad</span>
+        <div className="flex items-center justify-between bg-carbon-900 border border-carbon-600 rounded-card px-4 py-3">
+          <span className="text-white text-sm font-semibold">Cantidad</span>
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -84,12 +87,12 @@ export default function ProductoModal({ producto, onCerrar }) {
             >
               −
             </button>
-            <span className="text-white w-6 text-center">{cantidad}</span>
+            <span className="text-white w-6 text-center font-semibold text-lg">{cantidad}</span>
             <button
               type="button"
               onClick={() => setCantidad((c) => c + 1)}
               aria-label="Agregar una unidad"
-              className="w-9 h-9 rounded-full bg-brand-500 text-white font-bold active:scale-90"
+              className="w-9 h-9 rounded-full bg-brand-500 text-carbon-900 font-bold active:scale-90"
             >
               +
             </button>

@@ -30,8 +30,8 @@ export default function GestionPedidos() {
 
   const cambiarEstadoCocina = async (pedidoId, nuevoEstado) => {
     try {
-      await axiosClient.put(`/v1/pedidos/${pedidoId}/estado-cocina`, {
-        estadoCocina: nuevoEstado,
+      await axiosClient.put(`/v1/pedidos/${pedidoId}/estado`, {
+        nuevoEstado,
       });
       setPedidos((prev) =>
         prev
@@ -112,29 +112,26 @@ function TarjetaPedido({ pedido, accionLabel, accionColor, onAccion }) {
       <div>
         <div className="flex justify-between items-start">
           <h3 className="text-white text-lg font-bold">
-            Jornada N° {pedido.numeroJornada}
+            Pedido N° {pedido.numeroJornada}
           </h3>
           <span className="text-xs text-carbon-400">
-            Hace {calcularTiempoTranscurrido(pedido.createdAt)} min
+            Hace {calcularTiempoTranscurrido(pedido.fecha)} min
           </span>
         </div>
         <p className="text-xs text-carbon-500">ID: {pedido.id}</p>
 
         {/* Lista de productos */}
         <div className="mt-3 space-y-1.5">
-          {pedido.detalles?.map((det, idx) => (
+          {pedido.productos?.map((det, idx) => (
             <p key={idx} className="text-sm text-carbon-200">
               <span className="font-semibold text-brand-400">{det.cantidad}x</span> {det.producto?.nombre}
               {det.personalizaciones && (
-                <span className="text-xs text-carbon-400 block ml-5 italic">
-                  - {det.personalizaciones}
-                </span>
+                <span className="text-xs text-carbon-400 block ml-5 italic">- {det.personalizaciones}</span>
               )}
             </p>
           ))}
         </div>
       </div>
-
       <button
         onClick={onAccion}
         className={`w-full py-2.5 rounded font-bold text-sm transition-transform active:scale-95 ${accionColor}`}

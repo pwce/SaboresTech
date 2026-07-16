@@ -10,6 +10,9 @@ const router = express.Router();
 // obtener pedidos: solo permitido para caja/dueña
 router.get('/', verificarToken(['atendedor', 'dueña']), pedidosController.obtenerPedidos);
 
+// consultar el estado de un pedido puntual (usado por el kiosco de autoservicio, sin auth)
+router.get('/:id', pedidosController.obtenerPedidoPorId);
+
 // crear pedido desde la tablet de autoservicio
 router.post('/', validarSchema(pedidoSchema), pedidosController.crearPedido);
 
@@ -17,3 +20,4 @@ router.post('/', validarSchema(pedidoSchema), pedidosController.crearPedido);
 router.put('/:id/estado', verificarToken(['atendedor', 'dueña']), pedidosController.cambiarEstadoPedido); 
 
 export default router;
+

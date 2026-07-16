@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { useAutoservicio, PASOS } from "../../../context/AutoservicioContext";
 import axiosClient from "../../../api/axiosClient";
+import { construirProductosPedido } from "../pedidoUtils";
+
 
 const ESTADOS = {
   ESPERANDO: "esperando",
@@ -26,16 +28,9 @@ export default function PagoTarjeta() {
 
     const enviarPedidoTarjeta = async () => {
       try {
-        const productosFormateados = carrito.map((item) => ({
-          producto_id: item.id,
-          maxStock: item.stock, 
-          cantidad: item.cantidad,
-          personalizaciones: item.personalizaciones || "",
-        }));
-
         const res = await axiosClient.post("/v1/pedidos", {
           metodoPago: "tarjeta",
-          productos: productosFormateados,
+          productos: construirProductosPedido(carrito), // reemplaza a productosFormateados
         });
 
         if (res.data.success) {
@@ -44,12 +39,11 @@ export default function PagoTarjeta() {
         }
       } catch (error) {
         console.error("Error al registrar pedido con tarjeta:", error);
-        setErrorMensaje(
-          error.response?.data?.mensaje || "Error de comunicación con el servidor"
-        );
+        setErrorMensaje(error.response?.data?.mensaje || "Error de comunicación con el servidor");
         setEstado(ESTADOS.ERROR);
       }
     };
+        
 
     const t2 = setTimeout(() => {
       enviarPedidoTarjeta();

@@ -69,11 +69,8 @@ export const EXTRAS_CONFIG = [
   { key: "salsas", label: "Salsas" },
 ];
 
-// categorias de productos que se muestran en la jornada
 export const CATEGORIAS_PRODUCTO = ["Salado", "Dulce", "Bebestibles"];
 
-// nombres de productos que por definición del negocio SIEMPRE tienen stock fijo
-// (bebidas embotelladas/enlatadas, comida hecha con anticipación, etc.)
 export const PRODUCTOS_STOCK_FIJO = [
   "pizza",
   "empanada",
@@ -96,64 +93,63 @@ export const RECETAS_BEBESTIBLES = [
   {
     id: "milkshakes",
     keywords: ["milkshake"],
-    requiere: { frutas: "alguna", leches: "alguna" },
-    mensajeFaltante: "Faltan frutas y/o leche para preparar milkshakes.",
+    requiere: { frutas: "alguna", leches: "alguna", endulzantes: "alguna" },
+    mensajeFaltante: "Faltan frutas, leche y/o algún endulzante (azúcar o endulzante) para preparar milkshakes.",
   },
   {
     id: "jugosNaturales",
     keywords: ["jugo"],
-    requiere: { frutas: "alguna" },
-    mensajeFaltante: "Falta seleccionar al menos una fruta.",
+    requiere: { frutas: "alguna", endulzantes: "alguna", extras: ["aguaEmbotellada"] },
+    mensajeFaltante: "Falta seleccionar al menos una fruta, un endulzante (azúcar o endulzante) y agua embotellada.",
   },
   {
     id: "frappeChocomenta",
     keywords: ["chocomenta"],
-    requiere: { leches: "alguna", hielo: true, extras: ["chocolatepolvo", "menta"] },
-    mensajeFaltante: "Faltan leche, hielo, chocolate en polvo o menta.",
+    requiere: { leches: "alguna", hielo: true, endulzantes: "alguna", extras: ["chocolatepolvo", "menta"] },
+    mensajeFaltante: "Faltan leche, hielo, endulzante, chocolate en polvo o menta.",
   },
   {
     id: "frappeOreo",
     keywords: ["oreo"],
-    requiere: { leches: "alguna", hielo: true, extras: ["galletas_oreo"] },
-    mensajeFaltante: "Faltan leche, hielo o galletas Oreo.",
+    requiere: { leches: "alguna", hielo: true, endulzantes: "alguna", extras: ["galletas_oreo"] },
+    mensajeFaltante: "Faltan leche, hielo, endulzante o galletas Oreo.",
   },
   {
     id: "frappeMatcha",
     keywords: ["matcha"],
-    requiere: { leches: "alguna", hielo: true, extras: ["matcha"] },
-    mensajeFaltante: "Faltan leche, hielo o matcha.",
+    requiere: { leches: "alguna", hielo: true, endulzantes: "alguna", extras: ["matcha"] },
+    mensajeFaltante: "Faltan leche, hielo, endulzante o matcha.",
   },
   {
     id: "frappeVainilla",
     keywords: ["vainilla"],
-    requiere: { leches: "alguna", hielo: true, extras: ["vainilla"] },
-    mensajeFaltante: "Faltan leche, hielo o vainilla en polvo.",
+    requiere: { leches: "alguna", hielo: true, endulzantes: "alguna", extras: ["vainilla"] },
+    mensajeFaltante: "Faltan leche, hielo, endulzante o vainilla en polvo.",
   },
   {
     id: "frappeFrutilla",
     keywords: ["frutilla"],
-    requiere: { leches: "alguna", hielo: true, frutas: ["frutilla"] },
-    mensajeFaltante: "Faltan leche, hielo o frutilla.",
+    requiere: { leches: "alguna", hielo: true, endulzantes: "alguna", frutas: ["frutilla"] },
+    mensajeFaltante: "Faltan leche, hielo, endulzante o frutilla.",
   },
   {
     id: "chocofrape",
     keywords: ["chocofrap", "choco frap"],
-    requiere: { leches: "alguna", hielo: true, extras: ["chocolatepolvo"] },
-    mensajeFaltante: "Faltan leche, hielo o chocolate en polvo.",
+    requiere: { leches: "alguna", hielo: true, endulzantes: "alguna", extras: ["chocolatepolvo"] },
+    mensajeFaltante: "Faltan leche, hielo, endulzante o chocolate en polvo.",
   },
   {
     id: "frapuccino",
     keywords: ["frapuccino", "frappuccino"],
-    requiere: { leches: "alguna", hielo: true, extras: ["café"] },
-    mensajeFaltante: "Faltan leche, hielo o café.",
+    requiere: { leches: "alguna", hielo: true, endulzantes: "alguna", extras: ["café"] },
+    mensajeFaltante: "Faltan leche, hielo, endulzante o café.",
   },
   {
-    // fallback genérico: cualquier otro producto con "frap" en el nombre que no
-    // haya calzado arriba (evita que un frappé nuevo quede sin regla y se venda igual)
+
     id: "frappeGenerico",
     keywords: ["frap"],
-    requiere: { leches: "alguna", hielo: true },
-    mensajeFaltante: "Faltan leche y/o hielo.",
+    requiere: { leches: "alguna", hielo: true, endulzantes: "alguna" },
+    mensajeFaltante: "Faltan leche, hielo y/o endulzante.",
   },
 ];
 
@@ -167,9 +163,6 @@ export function obtenerRecetaBebestible(nombre = "") {
   return RECETAS_BEBESTIBLES.find((r) => r.keywords.some((k) => n.includes(k))) || null;
 }
 
-// mapa de labels legibles por grupo+clave, usado para mostrar los insumos
-// de la jornada vigente con nombres bonitos en vez de las claves crudas
-// (ej: "galletas_oreo" -> "Galletas Oreo")
 export const LABELS_POR_GRUPO = {
   envases: Object.fromEntries(ENVASES_CONFIG.map((i) => [i.key, i.label])),
   leches: Object.fromEntries(LECHES_CONFIG.map((i) => [i.key, i.label])),

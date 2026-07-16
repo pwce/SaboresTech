@@ -1,7 +1,7 @@
-// // reglasDisponibilidad.js
-import { obtenerRecetaBebestible } from "./jornada.config";
+// reglasDisponibilidad.js
+import { obtenerRecetaBebestible, obtenerLabelInsumo } from "./jornada.config";
 
-function insumoDisponible(insumos, grupo, key) {
+export function insumoDisponible(insumos, grupo, key) {
   const seleccionado =
     grupo === "envases" ? Number(insumos?.[grupo]?.[key]) > 0 : Boolean(insumos?.[grupo]?.[key]);
   if (!seleccionado) return false;
@@ -9,7 +9,7 @@ function insumoDisponible(insumos, grupo, key) {
   return !agotados.includes(`${grupo}.${key}`);
 }
 
-function algunoDisponible(insumos, grupo) {
+export function algunoDisponible(insumos, grupo) {
   const valores = insumos?.[grupo] || {};
   return Object.keys(valores).some((key) => insumoDisponible(insumos, grupo, key));
 }
@@ -57,6 +57,10 @@ export function evaluarDisponibilidadProducto(nombreProducto, insumos) {
     return { esSinStock: true, bloqueado: true, razon: receta.mensajeFaltante };
   }
 
+  if (req.endulzantes === "alguna" && !algunoDisponible(insumos, "endulzantes")) {
+    return { esSinStock: true, bloqueado: true, razon: receta.mensajeFaltante };
+  }
+
   if (req.hielo && !insumoDisponible(insumos, "extras", "hielo")) {
     return { esSinStock: true, bloqueado: true, razon: receta.mensajeFaltante };
   }
@@ -66,4 +70,20 @@ export function evaluarDisponibilidadProducto(nombreProducto, insumos) {
   }
 
   return { esSinStock: true, bloqueado: false, razon: "" };
+}
+
+function opcionesDisponiblesDelGrupo(insumos, grupo) {
+  const valores = insumos?.[grupo] || {};
+  return Object.keys(valores)
+    .filter((key) => insumoDisponible(insumos, grupo, key))
+    .map((key) => ({ key, label: obtenerLabelInsumo(grupo, key) }));
+}
+
+export function obtenerOpcionesDisponibles(insumos) {
+  if (!insumos) return null;
+  return {
+    frutasDisponibles: opcionesDisponiblesDelGrupo(insumos, "frutas"),
+    lechesDisponibles: opcionesDisponiblesDelGrupo(insumos, "leches"),
+    endulzantesDisponibles: opcionesDisponiblesDelGrupo(insumos, "endulzantes"),
+  };
 }

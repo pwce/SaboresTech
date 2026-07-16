@@ -1,7 +1,9 @@
 // PagoTransferencia.jsx
-import { useState } from "react";
-import { useAutoservicio, PASOS } from "../../../context/AutoservicioContext";
+import { useState, useEffect } from "react";
+import { useAutoservicio } from "../../../context/AutoservicioContext";
 import axiosClient from "../../../api/axiosClient";
+import { construirProductosPedido } from "../pedidoUtils";
+import { IconExito, IconReloj, IconError } from "../../../components/Icons";
 
 const DATOS_BANCARIOS = {
   banco: "Mercado Pago",
@@ -18,18 +20,17 @@ export default function PagoTransferencia() {
   const [numeroJornada, setNumeroJornada] = useState(null);
   const [enviado, setEnviado] = useState(false);
   const [validado, setValidado] = useState(false);
+  const [rechazado, setRechazado] = useState(false); // NUEVO
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState("");
 
   const enviarPedidoPendiente = async () => {
+    setEnviando(true);
+    setError("");
     try {
-      const productosFormateados = carrito.map((item) => ({
-        producto_id: item.id,
-        cantidad: item.cantidad,
-        personalizaciones: item.personalizaciones || "",
-      }));
-
       const res = await axiosClient.post("/v1/pedidos", {
         metodoPago: "transferencia",
-        productos: productosFormateados,
+        productos: construirProductosPedido(carrito),
       });
 
       if (res.data.success) {
@@ -38,21 +39,28 @@ export default function PagoTransferencia() {
         setEnviado(true);
       }
     } catch (error) {
-      alert(error.response?.data?.mensaje || "Error al procesar el pedido");
+      setError(error.response?.data?.mensaje || "Error al procesar el pedido");
+    } finally {
+      setEnviando(false);
     }
   };
 
-
   useEffect(() => {
-    if (!enviado || !pedidoId || validado) return;
+    if (!enviado || !pedidoId || validado || rechazado) return;
 
     const interval = setInterval(async () => {
       try {
-        const res = await axiosClient.get(`/v1/pedidos`);
-        const miPedido = res.data.data.find(p => p.id === pedidoId);
+        const res = await axiosClient.get(`/v1/pedidos/${pedidoId}`);
+        const miPedido = res.data.data;
 
         if (miPedido && miPedido.estadoPago === "validado") {
           setValidado(true);
+          clearInterval(interval);
+        }
+
+        // el atendedor rechazó el comprobante
+        if (miPedido && miPedido.estadoPago === "rechazado") {
+          setRechazado(true);
           clearInterval(interval);
         }
       } catch (error) {
@@ -61,17 +69,16 @@ export default function PagoTransferencia() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [enviado, pedidoId, validado]);
+  }, [enviado, pedidoId, validado, rechazado]);
 
-  // comprobante validado por el atendedor
-  if (validado) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-4 py-16 text-center animate-fade-in">
-        <span className="text-6xl"></span>
-        <h2 className="text-brand-400 font-display text-2xl font-bold">¡Comprobante Validado!</h2>
-        <p className="text-white text-lg font-medium">Tu pedido es el N° {numeroJornada}</p>
-        <p className="text-green-400 text-lg font-semibold mt-1">
-          "Tu pedido fue validado. En este momento lo estamos preparando"
+  // comprobante rechazado por el atendedor
+    if (rechazado) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-4 py-16 text-center animate-fade-in">
+        <IconError className="w-16 h-16 text-red-400" />
+        <h2 className="text-red-400 font-display text-2xl font-bold">Comprobante Rechazado</h2>
+        <p className="text-carbon-300 max-w-sm">
+          El atendedor no pudo validar tu transferencia. Acércate a caja para resolverlo o intenta nuevamente.
         </p>
         <button
           onClick={reiniciarPedido}
@@ -83,16 +90,36 @@ export default function PagoTransferencia() {
     );
   }
 
-  // esperar para validación del atendedor
+    // comprobante validado por el atendedor
+    if (validado) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-4 py-16 text-center animate-fade-in">
+          <IconExito className="w-16 h-16 text-brand-400" />
+          <h2 className="text-brand-400 font-display text-2xl font-bold">¡Comprobante Validado!</h2>
+          <p className="text-white text-lg font-medium">Tu pedido es el N° {numeroJornada}</p>
+          <p className="text-green-400 text-lg font-semibold mt-1">
+            Tu pedido fue validado. En este momento lo estamos preparando.
+          </p>
+        <button
+          onClick={reiniciarPedido}
+          className="mt-6 min-h-touch px-8 py-3 rounded-full bg-brand-500 text-carbon-900 font-bold transition-transform hover:scale-105"
+        >
+          Volver al inicio
+        </button>
+      </div>
+    );
+  }
+
+  // esperar validación del atendedor
   if (enviado) {
     return (
       <div className="flex flex-col items-center justify-center gap-6 py-12 text-center">
-        <div className="w-16 h-16 rounded-full border-4 border-brand-500/30 border-t-brand-500 animate-spin" />
+        <IconReloj className="w-14 h-14 text-brand-400 animate-pulse" />
         <h3 className="text-white font-display text-xl font-bold">
           Pedido N° {numeroJornada} Recibido
         </h3>
         <p className="text-yellow-400 font-semibold animate-pulse">
-          "Espera a que el atendedor valide tu transferencia"
+          Espera a que el atendedor valide tu transferencia
         </p>
         <p className="text-carbon-400 text-xs max-w-xs">
           El atendedor está comprobando la transacción en el sistema de Mercado Pago. No cierres esta ventana.
@@ -125,11 +152,18 @@ export default function PagoTransferencia() {
         </dl>
       </div>
 
+      {error && (
+        <div className="px-4 py-3 rounded-card bg-red-500/10 border border-red-500 text-red-400 text-sm text-center">
+          {error}
+        </div>
+      )}
+
       <button
         onClick={enviarPedidoPendiente}
-        className="w-full min-h-touch-lg rounded-card bg-brand-500 text-carbon-900 font-display font-bold hover:bg-brand-400 transition-transform active:scale-95"
+        disabled={enviando}
+        className="w-full min-h-touch-lg rounded-card bg-brand-500 text-carbon-900 font-display font-bold hover:bg-brand-400 transition-transform active:scale-95 disabled:opacity-60"
       >
-        Ya transferí, enviar pedido
+        {enviando ? "Enviando..." : "Ya transferí, enviar pedido"}
       </button>
     </div>
   );

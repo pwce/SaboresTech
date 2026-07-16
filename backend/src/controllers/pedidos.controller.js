@@ -3,18 +3,19 @@ import { AppDataSource } from '../config/configDb.js';
 import { PedidoEntity } from '../entities/pedido.entity.js';
 import { DetallePedidoEntity } from '../entities/detallePedido.entity.js';
 import { ProductoEntity } from '../entities/producto.entity.js';
-import { MoreThanOrEqual } from 'typeorm';
+import { JornadaEntity } from '../entities/jornada.entity.js';
 
 const pedidoRepository = AppDataSource.getRepository(PedidoEntity);
 const detalleRepository = AppDataSource.getRepository(DetallePedidoEntity);
 const productoRepository = AppDataSource.getRepository(ProductoEntity);
+const jornadaRepository = AppDataSource.getRepository(JornadaEntity);
 
 
 export async function crearPedido(req, res) {
     try {
-        
-        const { usuario_id, metodoPago, productos, montoRecibido } = req.body; 
-        
+
+        const { usuario_id, metodoPago, productos } = req.body;
+
         if (!metodoPago || !productos || productos.length === 0) {
             return res.status(400).json({
                 success: false,
@@ -22,13 +23,29 @@ export async function crearPedido(req, res) {
             });
         }
 
+        // solo se pueden generar pedidos si hay una jornada activa
+        const jornadaActiva = await jornadaRepository.findOne({
+            where: { activa: true },
+            order: { id: 'DESC' }
+        });
+        if (!jornadaActiva) {
+            return res.status(400).json({
+                success: false,
+                mensaje: "No hay ninguna jornada activa en este momento. No es posible generar pedidos."
+            });
+        }
+
+        const insumos = jornadaActiva.insumosDisponibles || {};
+        insumos.envases = insumos.envases || { vasos: 0, tapas: 0, bombillas: 0 };
+
         let totalPedido = 0;
+        let envasesNecesarios = 0; // cuántas unidades de vaso/tapa/bombilla se van a descontar
         const listaDetallesA_Guardar = [];
 
-        // validar cada producto enviado y calcular los costos reales
+        // validar cada producto enviado y calcular los costos reales desde la base de datos
         for (const item of productos) {
             const prodReal = await productoRepository.findOneBy({ id: Number(item.producto_id) });
-            
+
             if (!prodReal) {
                 return res.status(404).json({
                     success: false,
@@ -43,69 +60,81 @@ export async function crearPedido(req, res) {
                 });
             }
 
-            const categoriasConStockFijo = ['Pizzas', 'Sándwiches', 'Empanadas', 'Donas'];
-            if (categoriasConStockFijo.includes(prodReal.categoria)) {
+            if (prodReal.controlaStock) {
+                // producto con stock fijo (pizzas, empanadas, bebidas en lata, etc.)
                 if (prodReal.stock < item.cantidad) {
                     return res.status(400).json({
                         success: false,
                         mensaje: `Lo sentimos, solo quedan ${prodReal.stock} unidades de '${prodReal.nombre}'.`
                     });
                 }
-                
 
                 prodReal.stock -= item.cantidad;
-
                 if (prodReal.stock === 0) {
                     prodReal.disponible = false;
                 }
-
                 await productoRepository.save(prodReal);
+            } else if (prodReal.categoria === 'Bebestibles') {
+                // milkshake / jugo natural / frappé: se preparan al momento y
+                // consumen 1 vaso + 1 tapa + 1 bombilla por unidad vendida
+                envasesNecesarios += item.cantidad;
             }
 
             const subtotal = prodReal.precio * item.cantidad;
             totalPedido += subtotal;
 
-
             listaDetallesA_Guardar.push({
                 cantidad: item.cantidad,
                 precioUnitario: prodReal.precio,
                 producto: prodReal,
-                personalizaciones: item.personalizaciones || '' 
+                personalizaciones: item.personalizaciones || ''
             });
         }
-        
-        const inicioHoy = new Date();
-        inicioHoy.setHours(0, 0, 0, 0); 
 
-        const pedidosHoy = await pedidoRepository.count({
-            where: {
-                fecha: MoreThanOrEqual(inicioHoy)
+        // descontar envases si el pedido incluye bebestibles sin stock fijo
+        if (envasesNecesarios > 0) {
+            const { vasos, tapas, bombillas } = insumos.envases;
+            if (Number(vasos) < envasesNecesarios || Number(tapas) < envasesNecesarios || Number(bombillas) < envasesNecesarios) {
+                return res.status(400).json({
+                    success: false,
+                    mensaje: "No quedan suficientes vasos, tapas y/o bombillas para preparar este pedido."
+                });
             }
-        });
-        const nuevoNumeroJornada = pedidosHoy + 1;
+            insumos.envases.vasos = Number(vasos) - envasesNecesarios;
+            insumos.envases.tapas = Number(tapas) - envasesNecesarios;
+            insumos.envases.bombillas = Number(bombillas) - envasesNecesarios;
 
-        let vueltoCalculado = 0;
+            jornadaActiva.insumosDisponibles = insumos;
+            await jornadaRepository.save(jornadaActiva);
+        }
+
+        // numeración correlativa de pedidos dentro de la jornada activa
+        const pedidosDeLaJornada = await pedidoRepository.count({
+            where: { jornada: { id: jornadaActiva.id } }
+        });
+        const nuevoNumeroJornada = pedidosDeLaJornada + 1;
+
+        // el pedido nace pendiente de pago; el atendedor lo valida desde el modulo de Pagos, excepto tarjeta que la propia POS confirma al momento
         let estadoPagoInicial = 'pendiente';
         let estadoCocinaInicial = 'en_espera';
-        
         if (metodoPago === 'tarjeta') {
             estadoPagoInicial = 'validado';
             estadoCocinaInicial = 'en_preparacion';
         }
 
         const nuevoPedido = pedidoRepository.create({
-            numeroJornada: nuevoNumeroJornada, 
-            fecha: new Date(),                 
+            numeroJornada: nuevoNumeroJornada,
+            fecha: new Date(),
             total: totalPedido,
             metodoPago,
             estadoPago: estadoPagoInicial,
             estadoCocina: estadoCocinaInicial,
-            montoRecibido: 0, 
+            montoRecibido: 0,
             vuelto: 0,
+            jornada: { id: jornadaActiva.id },
             usuario: usuario_id ? { id: Number(usuario_id) } : null
         });
         await pedidoRepository.save(nuevoPedido);
-
 
         for (const detalle of listaDetallesA_Guardar) {
             const filaDetalle = detalleRepository.create({
@@ -113,7 +142,7 @@ export async function crearPedido(req, res) {
                 precioUnitario: detalle.precioUnitario,
                 producto: detalle.producto,
                 personalizaciones: detalle.personalizaciones,
-                pedido: nuevoPedido 
+                pedido: nuevoPedido
             });
             await detalleRepository.save(filaDetalle);
         }
@@ -124,7 +153,7 @@ export async function crearPedido(req, res) {
             pedido_id: nuevoPedido.id,
             numeroJornada: nuevoNumeroJornada,
             total: totalPedido,
-            vuelto: vueltoCalculado
+            vuelto: 0
         });
 
     } catch (error) {
@@ -148,9 +177,9 @@ export async function obtenerPedidos(req, res) {
         const pedidos = await pedidoRepository.find({
             where: whereFilters,
             relations: ['usuario'],
-            order: { fecha: 'ASC' } 
+            order: { fecha: 'ASC' }
         });
-        
+
         const pedidosConDetalles = await Promise.all(pedidos.map(async (pedido) => {
             const detalles = await detalleRepository.find({
                 where: { pedido: { id: pedido.id } },
@@ -172,6 +201,32 @@ export async function obtenerPedidos(req, res) {
             success: false,
             mensaje: "Error al cargar la lista de pedidos"
         });
+    }
+}
+
+export async function obtenerPedidoPorId(req, res) {
+    try {
+        const { id } = req.params;
+        const pedido = await pedidoRepository.findOneBy({ id: Number(id) });
+
+        if (!pedido) {
+            return res.status(404).json({ success: false, mensaje: "El pedido no existe" });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                id: pedido.id,
+                numeroJornada: pedido.numeroJornada,
+                estadoPago: pedido.estadoPago,
+                estadoCocina: pedido.estadoCocina,
+                vuelto: pedido.vuelto,
+                total: pedido.total,
+            }
+        });
+    } catch (error) {
+        console.error("Error en obtenerPedidoPorId:", error);
+        return res.status(500).json({ success: false, mensaje: "Error al consultar el pedido" });
     }
 }
 
@@ -203,10 +258,10 @@ export async function cambiarEstadoPedido(req, res) {
 
         // manejo del estado de pago
         if (nuevoEstadoPago) {
-            if (!['pendiente', 'validado'].includes(nuevoEstadoPago)) {
+            if (!['pendiente', 'validado', 'rechazado'].includes(nuevoEstadoPago)) {
                 return res.status(400).json({ success: false, mensaje: "Estado de pago no válido." });
             }
-
+ 
             if (nuevoEstadoPago === 'validado') {
                 const metodo = metodoPago || pedido.metodoPago;
                 if (metodo === 'efectivo') {
@@ -222,6 +277,11 @@ export async function cambiarEstadoPedido(req, res) {
                 }
                 pedido.estadoPago = 'validado';
                 pedido.estadoCocina = 'en_preparacion';
+            }
+ 
+            if (nuevoEstadoPago === 'rechazado') {
+                pedido.estadoPago = 'rechazado';
+                // no se prepara nada; el cliente debe intentar pagar de nuevo o pedir ayuda
             }
         }
 

@@ -1,6 +1,7 @@
 // MenuScreen.jsx
 import { useState, useMemo, useEffect } from "react";
 import { obtenerProductos } from "../../api/productos.service";
+import { obtenerJornadaActiva } from "../../api/jornada.service";
 import CategoriaTabs from "./components/CategoriaTabs";
 import ProductoCard from "./components/ProductoCard";
 import ProductoModal from "./components/ProductoModal";
@@ -14,15 +15,20 @@ export default function MenuScreen() {
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
   
   const [productosReal, setProductosReal] = useState([]);
+  const [insumosJornada, setInsumosJornada] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     async function cargarMenu() {
       try {
-        const data = await obtenerProductos();
+        const [data, jornada] = await Promise.all([
+          obtenerProductos(),
+          obtenerJornadaActiva(),
+        ]);
         const activosHoy = data.filter((p) => Boolean(p.enJornada) && p.disponible !== false);
         setProductosReal(activosHoy);
+        setInsumosJornada(jornada?.insumos || null);
       } catch (err) {
         console.error("Error al cargar el menú del backend:", err);
         setError("No se pudo cargar el menú. Por favor, intente más tarde.");
@@ -31,8 +37,8 @@ export default function MenuScreen() {
       }
     }
     cargarMenu();
-    // refresca el menu periódicamente para reflejar cambios que haga el personal
-    // (insumos agotados, productos desactivados, stock actualizado) sin recargar la página
+
+    // refresca el menu periodicamente para reflejar cambios que haga el personal
     const intervalo = setInterval(cargarMenu, 30000);
     return () => clearInterval(intervalo);
   }, []);
@@ -97,11 +103,10 @@ export default function MenuScreen() {
       {productoSeleccionado && (
         <ProductoModal
           producto={productoSeleccionado}
+          insumosJornada={insumosJornada}  
           onCerrar={() => setProductoSeleccionado(null)}
         />
       )}
     </div>
   );
 }
-
-// 
