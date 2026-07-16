@@ -6,7 +6,7 @@ import usuariosRouter from "./usuarios.routes.js";
 import pedidosRouter from "./pedidos.routes.js";
 import insumosRouter from "./insumos.routes.js";
 import jornadaRouter from "./jornada.routes.js";
-
+import gastosRouter from "./gastos.routes.js";
 
 export function routerApi(app) {
     const router = Router();
@@ -19,4 +19,5 @@ export function routerApi(app) {
     router.use('/pedidos', pedidosRouter);
     router.use('/insumos', insumosRouter );
     router.use('/jornada', jornadaRouter );
+    router.use('/gastos', gastosRouter);
 }

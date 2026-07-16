@@ -6,6 +6,7 @@ import { verificarToken } from '../middlewares/verificarToken.middleware.js';
 const router = Router();
 
 router.get('/activa', jornadaController.obtenerJornadaActiva);
+router.get('/', verificarToken(['atendedor', 'dueña']), jornadaController.obtenerJornadas);
 
 router.post('/abrir', verificarToken(['atendedor', 'dueña']), jornadaController.guardarJornada);
 router.post('/cerrar', verificarToken(['atendedor', 'dueña']), jornadaController.finalizarJornada);

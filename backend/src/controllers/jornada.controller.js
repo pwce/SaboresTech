@@ -15,7 +15,24 @@ function obtenerFechaHoraChile() {
     return new Date(`${anio}-${mes}-${dia}T${hora}:${minuto}:${segundo}`);
 }
 
-// para los jugos y milkshakes
+export async function obtenerJornadas(req, res) {
+  try {
+    const jornadas = await jornadaRepository.find({ order: { id: 'DESC' } });
+    return res.status(200).json({
+      success: true,
+      data: jornadas.map((j) => ({
+        id: j.id,
+        fechaInicio: j.fechaInicio,
+        fechaFin: j.fechaFin,
+        activa: j.activa,
+      })),
+    });
+  } catch (error) {
+    console.error("Error al listar jornadas:", error);
+    return res.status(500).json({ success: false, mensaje: "Error al obtener el historial de jornadas" });
+  }
+}
+
 export async function obtenerJornadaActiva(req, res) {
     try {
         const jornada = await jornadaRepository.findOne({
