@@ -1,5 +1,6 @@
 // CarritoScreen.jsx
 import { useAutoservicio, PASOS } from "../../context/AutoservicioContext";
+import { IconEliminar } from "../../components/Icons";
 
 export default function CarritoScreen() {
   const { carrito, actualizarCantidad, eliminarItem, total, setPaso } = useAutoservicio();
@@ -39,9 +40,9 @@ export default function CarritoScreen() {
               <button
                 onClick={() => eliminarItem(item.id)}
                 aria-label={`Eliminar ${item.nombre}`}
-                className="text-red-400 text-xl"
+                className="w-9 h-9 flex items-center justify-center rounded-card border border-carbon-600 text-carbon-300 hover:text-estado-agotado hover:border-estado-agotado transition-colors shrink-0"
               >
-                🗑️
+                <IconEliminar className="w-4 h-4" />
               </button>
             </div>
 

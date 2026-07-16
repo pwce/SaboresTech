@@ -16,6 +16,7 @@ export async function obtenerProductos(req, res) {
             controlaStock: p.controlaStock,
             stock: p.stock,
             enJornada: p.enJornada ?? false,
+            tipo: determinarTipoProducto(p.nombre),
             imagen: p.imagenUrl || 'https://via.placeholder.com/60'
         }));
         return res.status(200).json({

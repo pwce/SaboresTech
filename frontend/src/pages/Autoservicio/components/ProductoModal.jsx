@@ -16,11 +16,11 @@ const FORMULARIOS = {
 export default function ProductoModal({ producto, onCerrar }) {
   const { agregarAlCarrito } = useAutoservicio();
   const [opciones, setOpciones] = useState({ resumen: "" });
+  const [cantidad, setCantidad] = useState(1);
 
   const Formulario = FORMULARIOS[producto.tipo];
 
   function aceptar() {
-    const cantidad = opciones.cantidad || 1;
     agregarAlCarrito({
       id: `${producto.id}-${Date.now()}`,
       productoId: producto.id,
@@ -73,6 +73,29 @@ export default function ProductoModal({ producto, onCerrar }) {
           </p>
         )}
 
+        <div className="flex items-center justify-between bg-carbon-900/60 border border-carbon-700 rounded-card px-4 py-3">
+          <span className="text-carbon-200 text-sm font-medium">Cantidad</span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setCantidad((c) => Math.max(1, c - 1))}
+              aria-label="Quitar una unidad"
+              className="w-9 h-9 rounded-full bg-carbon-700 text-white font-bold active:scale-90"
+            >
+              −
+            </button>
+            <span className="text-white w-6 text-center">{cantidad}</span>
+            <button
+              type="button"
+              onClick={() => setCantidad((c) => c + 1)}
+              aria-label="Agregar una unidad"
+              className="w-9 h-9 rounded-full bg-brand-500 text-white font-bold active:scale-90"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
         <button
           onClick={aceptar}
           className="
@@ -80,7 +103,7 @@ export default function ProductoModal({ producto, onCerrar }) {
             active:scale-95 transition-transform mt-2
           "
         >
-          Aceptar
+          Aceptar{cantidad > 1 ? ` (${cantidad})` : ""}
         </button>
       </div>
     </div>

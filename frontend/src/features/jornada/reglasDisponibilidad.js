@@ -1,6 +1,20 @@
 // // reglasDisponibilidad.js
 import { obtenerRecetaBebestible } from "./jornada.config";
 
+function insumoDisponible(insumos, grupo, key) {
+  const seleccionado =
+    grupo === "envases" ? Number(insumos?.[grupo]?.[key]) > 0 : Boolean(insumos?.[grupo]?.[key]);
+  if (!seleccionado) return false;
+  const agotados = insumos?.agotados || [];
+  return !agotados.includes(`${grupo}.${key}`);
+}
+
+function algunoDisponible(insumos, grupo) {
+  const valores = insumos?.[grupo] || {};
+  return Object.keys(valores).some((key) => insumoDisponible(insumos, grupo, key));
+}
+
+
 /**
  * evalúa si un producto (bebestible sin stock fijo) se puede vender hoy,
  * segun su receta específica y los insumos configurados para la jornada
@@ -12,41 +26,42 @@ import { obtenerRecetaBebestible } from "./jornada.config";
 export function evaluarDisponibilidadProducto(nombreProducto, insumos) {
   const receta = obtenerRecetaBebestible(nombreProducto);
 
-  // no es un bebestible "sin stock fijo" como pizza, empanadas o bebidas en lata
+  // no es un bebestible sin stock fijo como pizza, empanadas o bebidas en lata
   if (!receta) {
     return { esSinStock: false, bloqueado: false, razon: "" };
   }
 
-  const envases = insumos?.envases || {};
   const hayEnvases =
-    Number(envases.vasos) > 0 && Number(envases.tapas) > 0 && Number(envases.bombillas) > 0;
+    insumoDisponible(insumos, "envases", "vasos") &&
+    insumoDisponible(insumos, "envases", "tapas") &&
+    insumoDisponible(insumos, "envases", "bombillas");
 
   if (!hayEnvases) {
     return {
       esSinStock: true,
       bloqueado: true,
-      razon: "Falta seleccionar vasos, tapas y bombillas para la jornada.",
+      razon: "Falta vasos, tapas y/o bombillas (sin seleccionar o agotados).",
     };
   }
 
   const req = receta.requiere;
 
-  if (req.frutas === "alguna" && !Object.values(insumos?.frutas || {}).some(Boolean)) {
+  if (req.frutas === "alguna" && !algunoDisponible(insumos, "frutas")) {
     return { esSinStock: true, bloqueado: true, razon: receta.mensajeFaltante };
   }
-  if (Array.isArray(req.frutas) && !req.frutas.every((f) => Boolean(insumos?.frutas?.[f]))) {
-    return { esSinStock: true, bloqueado: true, razon: receta.mensajeFaltante };
-  }
-
-  if (req.leches === "alguna" && !Object.values(insumos?.leches || {}).some(Boolean)) {
+  if (Array.isArray(req.frutas) && !req.frutas.every((f) => insumoDisponible(insumos, "frutas", f))) {
     return { esSinStock: true, bloqueado: true, razon: receta.mensajeFaltante };
   }
 
-  if (req.hielo && !insumos?.extras?.hielo) {
+  if (req.leches === "alguna" && !algunoDisponible(insumos, "leches")) {
     return { esSinStock: true, bloqueado: true, razon: receta.mensajeFaltante };
   }
 
-  if (Array.isArray(req.extras) && !req.extras.every((e) => Boolean(insumos?.extras?.[e]))) {
+  if (req.hielo && !insumoDisponible(insumos, "extras", "hielo")) {
+    return { esSinStock: true, bloqueado: true, razon: receta.mensajeFaltante };
+  }
+
+  if (Array.isArray(req.extras) && !req.extras.every((e) => insumoDisponible(insumos, "extras", e))) {
     return { esSinStock: true, bloqueado: true, razon: receta.mensajeFaltante };
   }
 

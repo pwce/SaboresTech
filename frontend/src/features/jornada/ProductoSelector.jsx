@@ -1,6 +1,8 @@
+// ProductoSelector.jsx
 import React, { useState } from "react";
 import { CATEGORIAS_PRODUCTO, esProductoDeStockFijoPorNombre } from "./jornada.config";
 import { evaluarDisponibilidadProducto } from "./reglasDisponibilidad";
+import { IconEditar, IconEliminar } from "../../components/Icons";
 
 export default function ProductoSelector({
   productos,
@@ -275,18 +277,18 @@ export default function ProductoSelector({
             type="button"
             title="Editar producto"
             onClick={() => iniciarEdicion(p)}
-            className="w-8 h-8 flex items-center justify-center rounded-card border border-carbon-600 text-carbon-300 hover:text-brand-400 hover:border-brand-400 text-sm"
+            className="w-8 h-8 flex items-center justify-center rounded-card border border-carbon-600 text-carbon-300 hover:text-brand-400 hover:border-brand-400"
           >
-            ✎
+            <IconEditar className="w-4 h-4" />
           </button>
           <button
             type="button"
             title="Eliminar producto"
             disabled={eliminando}
             onClick={() => handleEliminar(p)}
-            className="w-8 h-8 flex items-center justify-center rounded-card border border-carbon-600 text-carbon-300 hover:text-estado-agotado hover:border-estado-agotado text-sm disabled:opacity-50"
+            className="w-8 h-8 flex items-center justify-center rounded-card border border-carbon-600 text-carbon-300 hover:text-estado-agotado hover:border-estado-agotado disabled:opacity-50"
           >
-            {eliminando ? "…" : "🗑"}
+            {eliminando ? "…" : <IconEliminar className="w-4 h-4" />}
           </button>
         </div>
       </div>

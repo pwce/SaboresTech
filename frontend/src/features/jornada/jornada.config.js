@@ -1,3 +1,4 @@
+// jornada.config.js
 export function insumosVacios() {
   return {
     envases: { vasos: 0, tapas: 0, bombillas: 0 },
@@ -164,4 +165,21 @@ export const RECETAS_BEBESTIBLES = [
 export function obtenerRecetaBebestible(nombre = "") {
   const n = nombre.toLowerCase();
   return RECETAS_BEBESTIBLES.find((r) => r.keywords.some((k) => n.includes(k))) || null;
+}
+
+// mapa de labels legibles por grupo+clave, usado para mostrar los insumos
+// de la jornada vigente con nombres bonitos en vez de las claves crudas
+// (ej: "galletas_oreo" -> "Galletas Oreo")
+export const LABELS_POR_GRUPO = {
+  envases: Object.fromEntries(ENVASES_CONFIG.map((i) => [i.key, i.label])),
+  leches: Object.fromEntries(LECHES_CONFIG.map((i) => [i.key, i.label])),
+  frutas: Object.fromEntries(FRUTAS_CONFIG.map((i) => [i.key, i.label])),
+  endulzantes: Object.fromEntries(ENDULZANTES_CONFIG.map((i) => [i.key, i.label])),
+  crema: Object.fromEntries(CREMA_CONFIG.map((i) => [i.key, i.label])),
+  extras: Object.fromEntries(EXTRAS_CONFIG.map((i) => [i.key, i.label])),
+};
+
+//obtiene el nombre legible de un insumo puntual 
+export function obtenerLabelInsumo(grupo, key) {
+  return LABELS_POR_GRUPO[grupo]?.[key] || key;
 }
