@@ -1,3 +1,4 @@
+// caja.routes.js
 import { Router } from 'express';
 import * as cajaController from '../controllers/caja.controller.js';
 import { verificarToken } from '../middlewares/verificarToken.middleware.js';

@@ -1,3 +1,4 @@
+// caja.entity.js
 import { EntitySchema } from 'typeorm';
 
 export const CajaEntity = new EntitySchema({
@@ -7,36 +8,44 @@ export const CajaEntity = new EntitySchema({
     id: { 
         primary: true, 
         type: 'int', 
+        
         generated: true 
     },
     saldoInicial: { 
         name: 'saldo_inicial', 
         type: 'int', 
-        nullable: false },
+        nullable: false 
+    },
     saldoFinalTeorico: { 
         name: 'saldo_final_teorico', 
         type: 'int', 
-        nullable: true },
+        nullable: true 
+    },
     saldoFinalContado: { 
         name: 'saldo_final_contado', 
         type: 'int', 
-        nullable: true },
+        nullable: true 
+    },
     diferencia: { 
         type: 'int', 
-        nullable: true },
+        nullable: true 
+    },
     estado: { 
         type: 'varchar', 
         length: 20, 
         nullable: false, 
-        default: 'abierta' },
+        default: 'abierta' 
+    },
     fechaApertura: { 
         name: 'fecha_apertura', 
         type: 'timestamp with time zone', 
-        nullable: false },
+        nullable: false 
+    },
     fechaCierre: { 
         name: 'fecha_cierre', 
         type: 'timestamp with time zone', 
-        nullable: true },
+        nullable: true 
+    },
   },
   relations: {
     jornada: {

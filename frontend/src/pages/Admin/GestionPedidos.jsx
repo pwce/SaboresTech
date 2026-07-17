@@ -118,7 +118,17 @@ function TarjetaPedido({ pedido, accionLabel, accionColor, onAccion }) {
             Hace {calcularTiempoTranscurrido(pedido.fecha)} min
           </span>
         </div>
-        <p className="text-xs text-carbon-500">ID: {pedido.id}</p>
+        {pedido.tipoServicio && (
+          <span
+            className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-bold uppercase ${
+              pedido.tipoServicio === "llevar"
+                ? "bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                : "bg-teal-500/10 text-teal-300 border border-teal-500/20"
+            }`}
+          >
+            {pedido.tipoServicio === "llevar" ? "Para llevar" : "Para comer aquí"}
+          </span>
+        )}
 
         {/* Lista de productos */}
         <div className="mt-3 space-y-1.5">
@@ -126,7 +136,7 @@ function TarjetaPedido({ pedido, accionLabel, accionColor, onAccion }) {
             <p key={idx} className="text-sm text-carbon-200">
               <span className="font-semibold text-brand-400">{det.cantidad}x</span> {det.producto?.nombre}
               {det.personalizaciones && (
-                <span className="text-xs text-carbon-400 block ml-5 italic">- {det.personalizaciones}</span>
+                <span className="text-sm text-carbon-300 block ml-5">- {det.personalizaciones}</span>
               )}
             </p>
           ))}

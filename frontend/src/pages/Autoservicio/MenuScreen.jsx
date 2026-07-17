@@ -7,6 +7,7 @@ import ProductoCard from "./components/ProductoCard";
 import ProductoModal from "./components/ProductoModal";
 import CarritoFlotante from "./components/CarritoFlotante";
 import { CATEGORIAS_PRODUCTO } from "../../features/jornada/jornada.config";
+import { evaluarDisponibilidadProducto } from "../../features/jornada/reglasDisponibilidad";
 
 
 export default function MenuScreen() {
@@ -44,10 +45,10 @@ export default function MenuScreen() {
   }, []);
 
   const productosFiltrados = useMemo(() => {
-    return productosReal.filter(
-      (p) => (p.categoria || "").toLowerCase() === (categoriaActiva || "").toLowerCase()
-    );
-  }, [categoriaActiva, productosReal]);
+    return productosReal
+      .filter((p) => (p.categoria || "").toLowerCase() === (categoriaActiva || "").toLowerCase())
+      .filter((p) => !evaluarDisponibilidadProducto(p.nombre, insumosJornada).bloqueado);
+  }, [categoriaActiva, productosReal, insumosJornada]);
 
   if (cargando) {
     return (
@@ -103,7 +104,7 @@ export default function MenuScreen() {
       {productoSeleccionado && (
         <ProductoModal
           producto={productoSeleccionado}
-          insumosJornada={insumosJornada}  
+          insumosJornada={insumosJornada}
           onCerrar={() => setProductoSeleccionado(null)}
         />
       )}

@@ -1,12 +1,14 @@
 // GestionPagos.jsx
 import { useEffect, useState } from "react";
 import axiosClient from "../../api/axiosClient";
+import { IconExito } from "../../components/Icons";
 
 export default function GestionPagos() {
   const [pedidosPendientes, setPedidosPendientes] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [montosEfectivo, setMontosEfectivo] = useState({}); 
   const [procesandoId, setProcesandoId] = useState(null);
+  const [mensajeExito, setMensajeExito] = useState("");
   
   const obtenerPedidosPendientes = async () => {
     try {
@@ -30,6 +32,12 @@ export default function GestionPagos() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (!mensajeExito) return;
+    const t = setTimeout(() => setMensajeExito(""), 3000);
+    return () => clearTimeout(t);
+  }, [mensajeExito]);
+
   const handleValidarPago = async (pedido, vuelto = 0) => {
       setProcesandoId(pedido.id);
       try {
@@ -39,6 +47,7 @@ export default function GestionPagos() {
           montoRecibido: pedido.metodoPago === "efectivo" ? Number(montosEfectivo[pedido.id]) : undefined,
         });
         setPedidosPendientes((prev) => prev.filter((p) => p.id !== pedido.id));
+        setMensajeExito(`Pago del Pedido N° ${pedido.numeroJornada} validado. Se envió a cocina.`);
       } catch (error) {
         alert(error.response?.data?.mensaje || "Error al validar el pago");
       } finally {
@@ -76,6 +85,13 @@ export default function GestionPagos() {
             Valida los pagos de autoservicio en efectivo o transferencia.
           </p>
         </header>
+
+        {mensajeExito && (
+          <div className="mb-4 max-w-4xl bg-brand-500/10 border border-brand-500/30 text-brand-300 rounded-card px-4 py-3 text-sm font-medium flex items-center gap-2">
+            <IconExito className="w-4 h-4 shrink-0" />
+            {mensajeExito}
+          </div>
+        )}
   
         {pedidosPendientes.length === 0 ? (
           <div className="bg-carbon-800 border border-carbon-700 rounded-card p-10 text-center text-carbon-400">
@@ -96,7 +112,7 @@ export default function GestionPagos() {
                 >
                   {/*datos del pedido*/}
                   <div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <span className="text-lg font-bold text-white">
                         Pedido N° {pedido.numeroJornada}
                       </span>
@@ -109,8 +125,18 @@ export default function GestionPagos() {
                       >
                         {pedido.metodoPago === "efectivo" ? "Efectivo" : "Transferencia"}
                       </span>
+                      {pedido.tipoServicio && (
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
+                            pedido.tipoServicio === "llevar"
+                              ? "bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                              : "bg-teal-500/10 text-teal-300 border border-teal-500/20"
+                          }`}
+                        >
+                          {pedido.tipoServicio === "llevar" ? "Para llevar" : "Para comer aquí"}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-xs text-carbon-400 mt-1">ID: {pedido.id}</p>
   
                     {/*detalles de productos*/}
                     <div className="mt-2 space-y-1">
@@ -118,7 +144,7 @@ export default function GestionPagos() {
                         <p key={idx} className="text-sm text-carbon-200">
                           <span className="font-semibold text-brand-400">{det.cantidad}x</span> {det.producto?.nombre}
                           {det.personalizaciones && (
-                            <span className="text-xs text-carbon-400 block ml-5 italic">- {det.personalizaciones}</span>
+                            <span className="text-sm text-carbon-300 block ml-5">- {det.personalizaciones}</span>
                           )}
                         </p>
                       ))}
@@ -187,4 +213,3 @@ export default function GestionPagos() {
       </div>
     );
   }
-  

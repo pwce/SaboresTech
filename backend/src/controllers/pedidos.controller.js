@@ -14,7 +14,7 @@ const jornadaRepository = AppDataSource.getRepository(JornadaEntity);
 export async function crearPedido(req, res) {
     try {
 
-        const { usuario_id, metodoPago, productos } = req.body;
+        const { usuario_id, metodoPago, tipoServicio, productos } = req.body;
 
         if (!metodoPago || !productos || productos.length === 0) {
             return res.status(400).json({
@@ -23,7 +23,6 @@ export async function crearPedido(req, res) {
             });
         }
 
-        // solo se pueden generar pedidos si hay una jornada activa
         const jornadaActiva = await jornadaRepository.findOne({
             where: { activa: true },
             order: { id: 'DESC' }
@@ -39,10 +38,9 @@ export async function crearPedido(req, res) {
         insumos.envases = insumos.envases || { vasos: 0, tapas: 0, bombillas: 0 };
 
         let totalPedido = 0;
-        let envasesNecesarios = 0; // cuántas unidades de vaso/tapa/bombilla se van a descontar
+        let envasesNecesarios = 0; 
         const listaDetallesA_Guardar = [];
 
-        // validar cada producto enviado y calcular los costos reales desde la base de datos
         for (const item of productos) {
             const prodReal = await productoRepository.findOneBy({ id: Number(item.producto_id) });
 
@@ -75,8 +73,6 @@ export async function crearPedido(req, res) {
                 }
                 await productoRepository.save(prodReal);
             } else if (prodReal.categoria === 'Bebestibles') {
-                // milkshake / jugo natural / frappé: se preparan al momento y
-                // consumen 1 vaso + 1 tapa + 1 bombilla por unidad vendida
                 envasesNecesarios += item.cantidad;
             }
 
@@ -108,7 +104,6 @@ export async function crearPedido(req, res) {
             await jornadaRepository.save(jornadaActiva);
         }
 
-        // numeración correlativa de pedidos dentro de la jornada activa
         const pedidosDeLaJornada = await pedidoRepository.count({
             where: { jornada: { id: jornadaActiva.id } }
         });
@@ -127,6 +122,7 @@ export async function crearPedido(req, res) {
             fecha: new Date(),
             total: totalPedido,
             metodoPago,
+            tipoServicio: tipoServicio || null,
             estadoPago: estadoPagoInicial,
             estadoCocina: estadoCocinaInicial,
             montoRecibido: 0,
@@ -281,7 +277,6 @@ export async function cambiarEstadoPedido(req, res) {
  
             if (nuevoEstadoPago === 'rechazado') {
                 pedido.estadoPago = 'rechazado';
-                // no se prepara nada; el cliente debe intentar pagar de nuevo o pedir ayuda
             }
         }
 

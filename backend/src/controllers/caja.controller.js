@@ -1,3 +1,4 @@
+//caja.controller.js
 import { AppDataSource } from '../config/configDb.js';
 import { CajaEntity } from '../entities/caja.entity.js';
 import { JornadaEntity } from '../entities/jornada.entity.js';
@@ -9,7 +10,7 @@ const jornadaRepository = AppDataSource.getRepository(JornadaEntity);
 const pedidoRepository = AppDataSource.getRepository(PedidoEntity);
 const gastoRepository = AppDataSource.getRepository(GastoEntity);
 
-// calcula ingresos y salidas desde que se abrio la caja hasta ahora (o hasta el cierre)
+// calcula ingresos y salidas desde que se abrió la caja hasta ahora (o hasta el cierre)
 async function calcularMovimientos(caja) {
   const desde = caja.fechaApertura;
   const hasta = caja.fechaCierre || new Date();

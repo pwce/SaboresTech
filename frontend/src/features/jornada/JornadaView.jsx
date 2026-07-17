@@ -4,18 +4,25 @@ import Modal from "../../components/Modal";
 import { IconEditar, IconEliminar } from "../../components/Icons";
 import InsumosForm from "./InsumosForm";
 import ProductoSelector from "./ProductoSelector";
-import { insumosVacios, obtenerLabelInsumo, CATEGORIAS_PRODUCTO } from "./jornada.config";
+import { insumosVacios, obtenerLabelInsumo, CATEGORIAS_PRODUCTO, agregarInsumoPersonalizado, LECHES_CONFIG, FRUTAS_CONFIG, ENDULZANTES_CONFIG, CREMA_CONFIG, EXTRAS_CONFIG } from "./jornada.config";
 import { evaluarDisponibilidadProducto } from "./reglasDisponibilidad";
 import { obtenerJornadaActiva, abrirJornada, cerrarJornada, actualizarInsumosJornada } from "../../api/jornada.service";
 import { obtenerProductos, crearProducto, actualizarProducto, eliminarProducto, cambiarEstadoJornadaProducto, actualizarStockProducto } from "../../api/productos.service";
 
 const GRUPOS_LABEL = {
-  envases: "Envases",
   leches: "Leche",
   frutas: "Frutas",
   endulzantes: "Endulzantes",
   crema: "Crema",
   extras: "Otros insumos",
+};
+
+const CONFIG_POR_GRUPO = {
+  leches: LECHES_CONFIG,
+  frutas: FRUTAS_CONFIG,
+  endulzantes: ENDULZANTES_CONFIG,
+  crema: CREMA_CONFIG,
+  extras: EXTRAS_CONFIG,
 };
 
 function formatearFecha(fechaIso) {
@@ -38,12 +45,9 @@ export default function JornadaView() {
   const [resumen, setResumen] = useState(null); 
   const [finalizando, setFinalizando] = useState(false);
 
-  // copia editable (aún no guardada) de los insumos de la jornada vigente,
-  // para poder previsualizar el efecto de marcar algo agotado antes de confirmar
   const [insumosPendientes, setInsumosPendientes] = useState(null);
   const [guardandoInsumos, setGuardandoInsumos] = useState(false);
   
-  // edicion o eliminación de un producto ya activo en la jornada vigente
   const [productoEditando, setProductoEditando] = useState(null);
   const [eliminandoActivoId, setEliminandoActivoId] = useState(null);
 
@@ -144,39 +148,47 @@ export default function JornadaView() {
       }
     };
   
-    const handleFinalizarJornada = async () => {
-      if (!window.confirm("¿Seguro que quieres finalizar la jornada actual?")) return;
-      setFinalizando(true);
-      try {
-        await cerrarJornada();
-        await cargarTodo();
-      } catch (err) {
-        console.error(err);
-        setError("No se pudo finalizar la jornada.");
-      } finally {
-        setFinalizando(false);
-      }
-    };
-  
-    // marca/desmarca un insumo como agotado SOLO localmente (aún no se guarda en el backend)
-    const toggleAgotadoPendiente = (grupo, key) => {
-      setInsumosPendientes((prev) => {
-        const copia = structuredClone(prev);
-        const agotados = new Set(copia.agotados || []);
-        const llave = `${grupo}.${key}`;
-        if (agotados.has(llave)) {
-          agotados.delete(llave);
-        } else {
-          agotados.add(llave);
-        }
-        copia.agotados = Array.from(agotados);
-        return copia;
-      });
-    };
+  const [confirmandoFinalizar, setConfirmandoFinalizar] = useState(false);
+
+  const handleFinalizarJornada = async () => {
+    setFinalizando(true);
+    try {
+      await cerrarJornada();
+      await cargarTodo();
+    } catch (err) {
+      console.error(err);
+      setError("No se pudo finalizar la jornada.");
+    } finally {
+      setFinalizando(false);
+      setConfirmandoFinalizar(false);
+    }
+  };
+
+
+  const toggleInsumoPendiente = (grupo, key) => {
+    setInsumosPendientes((prev) => {
+      const copia = structuredClone(prev);
+      copia[grupo] = { ...copia[grupo], [key]: !copia[grupo]?.[key] };
+      return copia;
+    });
+  };
+
+  // actualiza la cantidad de un envase (vasos, tapas, bombillas) SOLO localmente
+  const cambiarEnvasePendiente = (key, valor) => {
+    setInsumosPendientes((prev) => ({
+      ...prev,
+      envases: { ...prev.envases, [key]: Math.max(0, Number(valor) || 0) },
+    }));
+  };
+
+  // agrega un insumo personalizado (ej: una fruta nueva) al estado pendiente
+  const agregarInsumoPendiente = (grupo, nombreLibre) => {
+    setInsumosPendientes((prev) => agregarInsumoPersonalizado(prev, grupo, nombreLibre));
+  };
   
     const huboCambiosEnInsumos =
       jornada && insumosPendientes
-        ? JSON.stringify(jornada.insumos?.agotados || []) !== JSON.stringify(insumosPendientes.agotados || [])
+        ? JSON.stringify(jornada.insumos || {}) !== JSON.stringify(insumosPendientes || {})
         : false;
   
     // productos activos hoy que quedarían bloqueados si se guardan los cambios pendientes
@@ -191,8 +203,6 @@ export default function JornadaView() {
       try {
         await actualizarInsumosJornada(insumosPendientes);
   
-        // apaga automáticamente los productos activos que ya no se pueden preparar
-        // con los insumos disponibles/agotados actualizados
         await Promise.all(
           productosQueSeBloquearian.map((p) => cambiarEstadoJornadaProducto(p.id, false))
         );
@@ -224,7 +234,7 @@ export default function JornadaView() {
     }
   
     return (
-      <div className="max-w-5xl">
+      <div className="w-full">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <h2 className="text-xl sm:text-2xl font-display font-bold text-brand-400">Jornada</h2>
           {!jornada && !creandoJornada && (
@@ -237,7 +247,7 @@ export default function JornadaView() {
           )}
           {jornada && (
             <button
-              onClick={handleFinalizarJornada}
+              onClick={() => setConfirmandoFinalizar(true)}
               disabled={finalizando}
               className="px-5 py-3 rounded-card border-2 border-estado-agotado text-estado-agotado font-display font-bold text-sm hover:bg-estado-agotado/10 transition-colors min-h-touch disabled:opacity-60"
             >
@@ -317,7 +327,7 @@ export default function JornadaView() {
                 <h3 className="font-display font-bold text-white">
                   Insumos de la jornada{" "}
                   <span className="text-carbon-400 text-sm font-normal block sm:inline">
-                    (toca uno para marcarlo agotado)
+                    (toca uno para activarlo o desactivarlo)
                   </span>
                 </h3>
                 {huboCambiosEnInsumos && (
@@ -330,38 +340,65 @@ export default function JornadaView() {
                   </button>
                 )}
               </div>
-  
+
+              {/* envases: siempre visibles y editables, nunca desaparecen aunque lleguen a 0 */}
+              <div className="mb-4">
+                <h4 className="text-brand-300 font-semibold text-sm mb-2">Envases</h4>
+                <div className="flex flex-wrap gap-2">
+                  {["vasos", "tapas", "bombillas"].map((key) => (
+                    <div
+                      key={key}
+                      className={`flex items-center gap-2 border rounded-lg px-3 py-2
+                        ${Number(insumosPendientes.envases?.[key]) === 0 ? "border-estado-agotado bg-estado-agotado/10" : "border-carbon-600 bg-carbon-900"}`}
+                    >
+                      <label className="text-sm text-carbon-200 font-semibold capitalize">{key}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={insumosPendientes.envases?.[key] ?? 0}
+                        onChange={(e) => cambiarEnvasePendiente(key, e.target.value)}
+                        className="w-16 bg-carbon-800 border border-carbon-600 rounded px-2 py-1 text-white text-sm"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* resto de los grupos: se listan TODOS los insumos del catálogo + los personalizados,
+                  se puedan haber elegido o no al crear la jornada, para poder activarlos en cualquier momento */}
               {Object.entries(GRUPOS_LABEL).map(([grupo, label]) => {
-                const valores = insumosPendientes?.[grupo];
-                if (!valores || typeof valores !== "object") return null;
+                const clavesCatalogo = (CONFIG_POR_GRUPO[grupo] || []).map((c) => c.key);
+                const clavesPersonalizadas = Object.keys(insumosPendientes?.[grupo] || {});
+                const claves = Array.from(new Set([...clavesCatalogo, ...clavesPersonalizadas]));
                 return (
                   <div key={grupo} className="mb-4">
                     <h4 className="text-brand-300 font-semibold text-sm mb-2">{label}</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(valores).map(([key, val]) => {
-                        const agotado = (insumosPendientes.agotados || []).includes(`${grupo}.${key}`);
-                        const activo = grupo === "envases" ? Number(val) > 0 : Boolean(val);
-                        if (!activo && !agotado) return null; // solo mostramos lo que se seleccionó
+                    <div className="flex flex-wrap gap-2 items-center">
+                      {claves.map((key) => {
+                        const activo = Boolean(insumosPendientes?.[grupo]?.[key]);
                         return (
                           <button
                             key={key}
-                            onClick={() => toggleAgotadoPendiente(grupo, key)}
+                            onClick={() => toggleInsumoPendiente(grupo, key)}
                             className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold border transition-colors min-h-touch
                               ${
-                                agotado
-                                  ? "bg-estado-agotado/20 border-estado-agotado text-estado-agotado line-through"
-                                  : "bg-carbon-900 border-carbon-600 text-carbon-100"
+                                activo
+                                  ? "bg-brand-500 border-brand-500 text-carbon-900"
+                                  : "bg-carbon-900 border-carbon-600 text-carbon-300 line-through"
                               }`}
                           >
-                            {obtenerLabelInsumo(grupo, key)} {grupo === "envases" ? `(${val})` : ""}
+                            {obtenerLabelInsumo(grupo, key, insumosPendientes)}
                           </button>
                         );
                       })}
+                      {grupo === "frutas" && (
+                        <AgregarFrutaBoton onAgregar={(nombre) => agregarInsumoPendiente("frutas", nombre)} />
+                      )}
                     </div>
                   </div>
                 );
               })}
-  
+
               {huboCambiosEnInsumos && productosQueSeBloquearian.length > 0 && (
                 <div className="mt-4 px-4 py-3 rounded-card bg-estado-agotado/10 border border-estado-agotado text-sm text-estado-agotado">
                   <p className="font-semibold mb-1">
@@ -375,10 +412,10 @@ export default function JornadaView() {
                 </div>
               )}
             </div>
-  
+
             <div className="bg-carbon-800 border border-carbon-700 rounded-card p-4 sm:p-5">
               <h3 className="font-display font-bold text-white mb-4">Productos activos hoy</h3>
-              <div className="grid sm:grid-cols-2 gap-2">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {productosActivos.map((p) => {
                   const { bloqueado, razon } = evaluarDisponibilidadProducto(p.nombre, insumosPendientes);
                   return (
@@ -452,6 +489,83 @@ export default function JornadaView() {
             />
           )}
         </Modal>
+
+        {/* confirmar finalizar jornada */}
+        <Modal open={confirmandoFinalizar} onClose={() => setConfirmandoFinalizar(false)} title="Finalizar jornada">
+          <div className="space-y-4 text-sm">
+            <p className="text-carbon-200">
+              ¿Seguro que quieres finalizar la jornada actual? Ya no se podrán recibir más pedidos hasta que abras una nueva.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleFinalizarJornada}
+                disabled={finalizando}
+                className="flex-1 py-2.5 rounded-card bg-estado-agotado text-white font-display font-bold disabled:opacity-60"
+              >
+                {finalizando ? "Finalizando..." : "Sí, finalizar"}
+              </button>
+              <button
+                onClick={() => setConfirmandoFinalizar(false)}
+                disabled={finalizando}
+                className="flex-1 py-2.5 rounded-card border border-carbon-600 text-carbon-200 font-semibold"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      </div>
+    );
+  }
+  
+  function AgregarFrutaBoton({ onAgregar }) {
+    const [abierto, setAbierto] = useState(false);
+    const [valor, setValor] = useState("");
+  
+    const confirmar = () => {
+      if (!valor.trim()) return;
+      onAgregar(valor.trim());
+      setValor("");
+      setAbierto(false);
+    };
+  
+    if (!abierto) {
+      return (
+        <button
+          type="button"
+          onClick={() => setAbierto(true)}
+          className="px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold border border-dashed border-brand-400 text-brand-400 min-h-touch"
+        >
+          + Agregar fruta
+        </button>
+      );
+    }
+  
+    return (
+      <div className="flex items-center gap-2">
+        <input
+          autoFocus
+          type="text"
+          placeholder="Ej: Kiwi"
+          value={valor}
+          onChange={(e) => setValor(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && confirmar()}
+          className="bg-carbon-900 border border-carbon-600 rounded-lg px-3 py-2 text-white text-sm w-32"
+        />
+        <button
+          type="button"
+          onClick={confirmar}
+          className="px-3 py-2 rounded-lg bg-brand-500 text-carbon-900 text-sm font-semibold min-h-touch"
+        >
+          Agregar
+        </button>
+        <button
+          type="button"
+          onClick={() => { setAbierto(false); setValor(""); }}
+          className="text-carbon-400 text-sm px-1"
+        >
+          ✕
+        </button>
       </div>
     );
   }

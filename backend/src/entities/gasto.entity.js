@@ -1,3 +1,4 @@
+// gasto.entity.js
 import { EntitySchema } from 'typeorm';
 
 export const GastoEntity = new EntitySchema({
@@ -5,8 +6,8 @@ export const GastoEntity = new EntitySchema({
   tableName: 'gastos',
   columns: {
     id: { 
-        primary: true,
-        type: 'int',
+        primary: true, 
+        type: 'int', 
         generated: true 
     },
     nombreOperacion: { 

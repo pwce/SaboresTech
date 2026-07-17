@@ -1,3 +1,4 @@
+// caja.service.js
 import axiosClient from "./axiosClient";
 
 export async function obtenerCajaPorJornada(jornadaId) {

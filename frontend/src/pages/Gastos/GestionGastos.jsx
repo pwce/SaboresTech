@@ -1,3 +1,4 @@
+// GestionGastos.jsx
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { obtenerJornadas, obtenerGastos, crearGasto, marcarReembolsoHecho } from "../../api/gastos.service";
@@ -101,7 +102,7 @@ export default function GestionGastos() {
         <p className="text-carbon-300 text-sm">Registra los gastos operativos del local, de cualquier jornada.</p>
       </header>
 
-      {/*selector de jornada*/}
+      {/* selector de jornada */}
       <div className="max-w-md">
         <label className="text-sm text-carbon-300 mb-1 block">Jornada a la que pertenece</label>
         <select
@@ -115,7 +116,7 @@ export default function GestionGastos() {
         </select>
       </div>
 
-      {/*formulario de nuevo gasto*/}
+      {/* formulario de nuevo gasto */}
       <form onSubmit={handleSubmit} className="bg-carbon-800 border border-carbon-700 rounded-card p-5 grid md:grid-cols-2 gap-4 max-w-3xl">
         <div>
           <label className="text-sm text-carbon-300 mb-1 block">Nombre de la operación</label>
@@ -185,7 +186,7 @@ export default function GestionGastos() {
         </button>
       </form>
 
-      {/*listado de gastos de la jornada seleccionada*/}
+      {/* listado de gastos de la jornada seleccionada */}
       <section>
         <h2 className="text-lg font-semibold text-carbon-100 mb-3">Gastos registrados en esta jornada</h2>
         {cargando ? (
@@ -199,7 +200,7 @@ export default function GestionGastos() {
         )}
       </section>
 
-      {/*reembolsos pendientes*/}
+      {/* reembolsos pendientes */}
       <section>
         <h2 className="text-lg font-semibold text-orange-400 mb-3">
           Reembolsos pendientes ({reembolsosPendientes.length})
@@ -224,7 +225,7 @@ export default function GestionGastos() {
         )}
       </section>
 
-      {/*historial de reembolsos ya hechos*/}
+      {/* historial de reembolsos ya hechos */}
       {reembolsosHechos.length > 0 && (
         <section>
           <h2 className="text-lg font-semibold text-green-400 mb-3">Reembolsos ya realizados</h2>

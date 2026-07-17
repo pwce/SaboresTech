@@ -15,24 +15,6 @@ function obtenerFechaHoraChile() {
     return new Date(`${anio}-${mes}-${dia}T${hora}:${minuto}:${segundo}`);
 }
 
-export async function obtenerJornadas(req, res) {
-  try {
-    const jornadas = await jornadaRepository.find({ order: { id: 'DESC' } });
-    return res.status(200).json({
-      success: true,
-      data: jornadas.map((j) => ({
-        id: j.id,
-        fechaInicio: j.fechaInicio,
-        fechaFin: j.fechaFin,
-        activa: j.activa,
-      })),
-    });
-  } catch (error) {
-    console.error("Error al listar jornadas:", error);
-    return res.status(500).json({ success: false, mensaje: "Error al obtener el historial de jornadas" });
-  }
-}
-
 export async function obtenerJornadaActiva(req, res) {
     try {
         const jornada = await jornadaRepository.findOne({
@@ -68,6 +50,30 @@ export async function obtenerJornadaActiva(req, res) {
     }
 }
 
+export async function obtenerJornadas(req, res) {
+    try {
+        const jornadas = await jornadaRepository.find({
+            order: { id: 'DESC' },
+        });
+ 
+        return res.status(200).json({
+            success: true,
+            data: jornadas.map((j) => ({
+                id: j.id,
+                fechaInicio: j.fechaInicio,
+                fechaFin: j.fechaFin,
+                activa: j.activa,
+            })),
+        });
+    } catch (error) {
+        console.error("Error al obtener el historial de jornadas:", error);
+        return res.status(500).json({
+            success: false,
+            mensaje: "Error interno al obtener el historial de jornadas",
+        });
+    }
+}
+
 export async function guardarJornada(req, res) {
     try {
         const { insumosDisponibles, productosSeleccionados } = req.body; 
@@ -94,7 +100,7 @@ export async function guardarJornada(req, res) {
             for (const p of productosSeleccionados) {
                 await productoRepository.update(
                     { id: Number(p.id) },
-                    { enJornada: true, stock: p.stock != null ? Number(p.stock) : 0 }
+                    { enJornada: true, stock: p.stock != null ? Number(p.stock) : 0, disponible: true }
               );
             }
         }

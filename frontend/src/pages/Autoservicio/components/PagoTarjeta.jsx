@@ -13,7 +13,7 @@ const ESTADOS = {
 };
 
 export default function PagoTarjeta() {
-  const { carrito, reiniciarPedido } = useAutoservicio();
+  const { carrito, tipoServicio, reiniciarPedido } = useAutoservicio();
   const [estado, setEstado] = useState(ESTADOS.ESPERANDO);
   const [numeroJornada, setNumeroJornada] = useState(null);
   const [errorMensaje, setErrorMensaje] = useState("");
@@ -30,6 +30,7 @@ export default function PagoTarjeta() {
       try {
         const res = await axiosClient.post("/v1/pedidos", {
           metodoPago: "tarjeta",
+          tipoServicio,
           productos: construirProductosPedido(carrito), // reemplaza a productosFormateados
         });
 

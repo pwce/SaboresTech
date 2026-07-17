@@ -15,7 +15,7 @@ const DATOS_BANCARIOS = {
 };
 
 export default function PagoTransferencia() {
-  const { total, carrito, reiniciarPedido } = useAutoservicio();
+  const { total, carrito, tipoServicio, reiniciarPedido } = useAutoservicio();
   const [pedidoId, setPedidoId] = useState(null);
   const [numeroJornada, setNumeroJornada] = useState(null);
   const [enviado, setEnviado] = useState(false);
@@ -30,6 +30,7 @@ export default function PagoTransferencia() {
     try {
       const res = await axiosClient.post("/v1/pedidos", {
         metodoPago: "transferencia",
+        tipoServicio,
         productos: construirProductosPedido(carrito),
       });
 

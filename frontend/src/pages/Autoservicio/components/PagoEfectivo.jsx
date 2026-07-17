@@ -6,7 +6,7 @@ import { construirProductosPedido } from "../pedidoUtils";
 import { IconExito, IconReloj, IconError } from "../../../components/Icons";
 
 export default function PagoEfectivo({ onVolverAMetodos }) {
-  const { total, carrito, reiniciarPedido } = useAutoservicio();
+  const { total, carrito, tipoServicio, reiniciarPedido } = useAutoservicio();
   const [pedidoId, setPedidoId] = useState(null);
   const [numeroJornada, setNumeroJornada] = useState(null);
   const [enviado, setEnviado] = useState(false);
@@ -22,6 +22,7 @@ export default function PagoEfectivo({ onVolverAMetodos }) {
       try {
         const res = await axiosClient.post("/v1/pedidos", {
           metodoPago: "efectivo",
+          tipoServicio,
           productos: construirProductosPedido(carrito),
         });
   
@@ -159,4 +160,3 @@ export default function PagoEfectivo({ onVolverAMetodos }) {
       </div>
     );
   }
-  

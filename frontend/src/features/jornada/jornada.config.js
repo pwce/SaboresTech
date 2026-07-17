@@ -173,6 +173,38 @@ export const LABELS_POR_GRUPO = {
 };
 
 //obtiene el nombre legible de un insumo puntual 
-export function obtenerLabelInsumo(grupo, key) {
+export function obtenerLabelInsumo(grupo, key, insumos) {
+  const labelPersonalizado = insumos?.customLabels?.[`${grupo}.${key}`];
+  if (labelPersonalizado) return labelPersonalizado;
   return LABELS_POR_GRUPO[grupo]?.[key] || key;
 }
+
+/**
+ * genera una key sin tildes/espacios a partir de un nombre libre, para
+ * poder guardar insumos personalizados (ej: una fruta nueva) dentro del
+ * mismo objeto plano {key: boolean} que ya usan los insumos fijos.
+ */
+export function slugificarInsumo(nombre) {
+  return nombre
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+/**
+ * agrega un insumo personalizado (ej: una fruta nueva) al objeto de insumos,
+ * marcándolo disponible y guardando su nombre legible original.
+ * @returns {object} una copia actualizada de `insumos`
+ */
+export function agregarInsumoPersonalizado(insumos, grupo, nombreLibre) {
+  const key = slugificarInsumo(nombreLibre);
+  if (!key) return insumos;
+  const copia = structuredClone(insumos);
+  copia[grupo] = { ...copia[grupo], [key]: true };
+  copia.customLabels = { ...(copia.customLabels || {}), [`${grupo}.${key}`]: nombreLibre.trim() };
+  return copia;
+}
+

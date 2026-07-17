@@ -17,6 +17,12 @@ export default function ProductoCard({ producto, onAgregar }) {
           {producto.nombre}
         </span>
 
+        {producto.controlaStock && (
+          <span className={`text-xs font-semibold ${producto.stock > 0 ? "text-carbon-400" : "text-estado-agotado"}`}>
+            {producto.stock > 0 ? `Quedan ${producto.stock}` : "Agotado"}
+          </span>
+        )}
+
         <div className="mt-auto pt-2 flex items-end justify-between gap-2">
           <span className="text-brand-400 font-semibold">
             ${producto.precio.toLocaleString("es-CL")}
@@ -38,3 +44,4 @@ export default function ProductoCard({ producto, onAgregar }) {
     </div>
   );
 }
+

@@ -224,6 +224,9 @@ export async function actualizarStockProducto(req, res) {
         }
 
         producto.stock = Number(stock);
+        if (Number(stock) > 0) {
+            producto.disponible = true;
+        }
         await productoRepository.save(producto);
 
         return res.status(200).json({
@@ -253,12 +256,25 @@ export async function eliminarProducto(req, res) {
             });
         }
 
-        await productoRepository.remove(producto);
-
-        return res.status(200).json({
-            success: true,
-            mensaje: `El producto '${producto.nombre}' fue eliminado exitosamente`
-        });
+        try {
+            await productoRepository.remove(producto);
+            return res.status(200).json({
+                success: true,
+                mensaje: `El producto '${producto.nombre}' fue eliminado exitosamente`
+            });
+        } catch (errorEliminar) {
+            if (errorEliminar.code === '23503') {
+                producto.disponible = false;
+                producto.enJornada = false;
+                await productoRepository.save(producto);
+                return res.status(200).json({
+                    success: true,
+                    softDelete: true,
+                    mensaje: `'${producto.nombre}' ya tiene pedidos registrados, así que no se puede borrar del todo sin perder ese historial. Se desactivó del catálogo y de la jornada de hoy.`
+                });
+            }
+            throw errorEliminar;
+        }
     } catch (error) {
         console.error("Error en eliminarProducto:", error);
         return res.status(500).json({

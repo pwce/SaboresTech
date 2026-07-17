@@ -42,6 +42,12 @@ export const PedidoEntity = new EntitySchema({
             length: 30,
             nullable: false, 
         },
+        tipoServicio: {
+            name: 'tipo_servicio',
+            type: 'varchar',
+            length: 20,
+            nullable: true,
+        },
         montoRecibido: {
             name: 'monto_recibido',
             type: 'int',

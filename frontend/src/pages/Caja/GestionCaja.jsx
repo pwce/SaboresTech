@@ -1,3 +1,4 @@
+// GestionCaja.jsx
 import { useEffect, useState } from "react";
 import { obtenerJornadas } from "../../api/gastos.service";
 import { obtenerCajaPorJornada, abrirCaja, cerrarCaja, obtenerHistorialCajas } from "../../api/caja.service";

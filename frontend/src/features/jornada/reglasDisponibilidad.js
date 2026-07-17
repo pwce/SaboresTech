@@ -2,11 +2,9 @@
 import { obtenerRecetaBebestible, obtenerLabelInsumo } from "./jornada.config";
 
 export function insumoDisponible(insumos, grupo, key) {
-  const seleccionado =
-    grupo === "envases" ? Number(insumos?.[grupo]?.[key]) > 0 : Boolean(insumos?.[grupo]?.[key]);
-  if (!seleccionado) return false;
-  const agotados = insumos?.agotados || [];
-  return !agotados.includes(`${grupo}.${key}`);
+  return grupo === "envases"
+    ? Number(insumos?.[grupo]?.[key]) > 0
+    : Boolean(insumos?.[grupo]?.[key]);
 }
 
 export function algunoDisponible(insumos, grupo) {
@@ -76,7 +74,7 @@ function opcionesDisponiblesDelGrupo(insumos, grupo) {
   const valores = insumos?.[grupo] || {};
   return Object.keys(valores)
     .filter((key) => insumoDisponible(insumos, grupo, key))
-    .map((key) => ({ key, label: obtenerLabelInsumo(grupo, key) }));
+    .map((key) => ({ key, label: obtenerLabelInsumo(grupo, key, insumos) }));
 }
 
 export function obtenerOpcionesDisponibles(insumos) {

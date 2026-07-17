@@ -1,3 +1,4 @@
+// caja.validation.js
 import Joi from 'joi';
 
 export const abrirCajaSchema = Joi.object({

@@ -1,9 +1,10 @@
 // TipoServicioScreen.jsx
 import { useAutoservicio, PASOS } from "../../context/AutoservicioContext";
+import { IconComerAqui, IconParaLlevar } from "../../components/Icons";
 
 const OPCIONES = [
-  { id: "aqui", label: "Para comer aquí", icono: "🍽️" },
-  { id: "llevar", label: "Para llevar", icono: "🥡" },
+  { id: "aqui", label: "Para comer aquí", Icono: IconComerAqui },
+  { id: "llevar", label: "Para llevar", Icono: IconParaLlevar },
 ];
 
 export default function TipoServicioScreen() {
@@ -31,7 +32,7 @@ export default function TipoServicioScreen() {
               transition-all active:scale-95 hover:border-accent hover:shadow-pop
             "
           >
-            <span className="text-6xl">{op.icono}</span>
+            <op.Icono className="w-16 h-16 text-accent" />
             <span className="text-white font-display text-xl font-medium text-center">
               {op.label}
             </span>
