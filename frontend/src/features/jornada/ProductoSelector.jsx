@@ -22,7 +22,6 @@ export default function ProductoSelector({
   const [preview, setPreview] = useState("");
   const [creando, setCreando] = useState(false);
 
-  // edición inline de un producto ya creado
   const [editandoId, setEditandoId] = useState(null);
   const [edicion, setEdicion] = useState({ nombre: "", precio: "", categoria: "Salado", controlaStock: true });
   const [edicionImagenFile, setEdicionImagenFile] = useState(null);
@@ -75,7 +74,6 @@ export default function ProductoSelector({
     }
   };
 
-  // FIX: reemplaza window.confirm por el popup estilizado
   const handleEliminar = async (p) => {
     const ok = await confirmar({
       titulo: "Eliminar producto",

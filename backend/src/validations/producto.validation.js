@@ -15,7 +15,21 @@ const productoSchema = Joi.object({
     }),
     disponible: Joi.boolean().default(true),
     controlaStock: Joi.any().optional(),
+    stock: Joi.number().integer().min(0).max(150).optional().messages({
+        'number.min': 'El stock no puede ser un número negativo',
+        'number.max': 'El stock de productos fijos no puede superar las 150 unidades',
+        'number.base': 'El stock debe ser un número válido'
+    }),
     imagen: Joi.any().optional() 
+});
+
+export const stockProductoSchema = Joi.object({
+    stock: Joi.number().integer().min(0).max(150).required().messages({
+        'number.min': 'El stock no puede ser un número negativo',
+        'number.max': 'El stock de un producto no puede superar las 150 unidades',
+        'number.base': 'El stock debe ser un número válido',
+        'any.required': 'Debes indicar la cantidad de stock'
+    })
 });
 
 export default productoSchema;

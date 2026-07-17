@@ -97,7 +97,7 @@ export default function InsumosForm({ insumos, onChange }) {
   };
 
   const cambiarEnvase = (key, valor) => {
-    const num = Math.max(0, Number(valor) || 0);
+    const num = Math.min(1000, Math.max(0, Number(valor) || 0));
     onChange({ ...insumos, envases: { ...insumos.envases, [key]: num } });
   };
 
@@ -116,6 +116,7 @@ export default function InsumosForm({ insumos, onChange }) {
             <input
               type="number"
               min="0"
+              max="1000"
               value={insumos.envases[e.key]}
               onChange={(ev) => cambiarEnvase(e.key, ev.target.value)}
               className="w-16 bg-carbon-900 border border-carbon-600 rounded px-2 py-1 text-white text-sm"

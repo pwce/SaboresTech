@@ -208,10 +208,10 @@ export async function actualizarStockProducto(req, res) {
         const { id } = req.params;
         const { stock } = req.body;
 
-        if (stock === undefined || Number(stock) < 0) {
+        if (stock === undefined || Number(stock) < 0 || Number(stock) > 150) {
             return res.status(400).json({
                 success: false,
-                mensaje: "Debes indicar una cantidad de stock válida (mayor o igual a 0)"
+                mensaje: "El stock debe ser un número entre 0 y 150 unidades"
             });
         }
 
@@ -283,3 +283,4 @@ export async function eliminarProducto(req, res) {
         });
     }
 }
+

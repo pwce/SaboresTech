@@ -51,6 +51,7 @@ export default function JornadaView() {
 
   const [insumosPendientes, setInsumosPendientes] = useState(null);
   const [guardandoInsumos, setGuardandoInsumos] = useState(false);
+  const [stockActivosPendientes, setStockActivosPendientes] = useState({});
 
   const [productoEditando, setProductoEditando] = useState(null);
   const [eliminandoActivoId, setEliminandoActivoId] = useState(null);
@@ -65,6 +66,7 @@ export default function JornadaView() {
       ]);
       setJornada(jornadaActiva);
       setInsumosPendientes(jornadaActiva ? structuredClone(jornadaActiva.insumos) : null);
+      setStockActivosPendientes({});
       setProductos(catalogo || []);
     } catch (err) {
       console.error(err);
@@ -179,7 +181,7 @@ export default function JornadaView() {
   const cambiarEnvasePendiente = (key, valor) => {
     setInsumosPendientes((prev) => ({
       ...prev,
-      envases: { ...prev.envases, [key]: Math.max(0, Number(valor) || 0) },
+      envases: { ...prev.envases, [key]: Math.min(1000, Math.max(0, Number(valor) || 0)) },
     }));
   };
 
@@ -191,6 +193,9 @@ export default function JornadaView() {
     jornada && insumosPendientes
       ? JSON.stringify(jornada.insumos || {}) !== JSON.stringify(insumosPendientes || {})
       : false;
+
+  const huboCambiosPendientes =
+    huboCambiosEnInsumos || Object.keys(stockActivosPendientes).length > 0;
 
   const productosActivos = productos.filter((p) => p.enJornada);
   const productosQueSeBloquearian = insumosPendientes
@@ -209,10 +214,14 @@ export default function JornadaView() {
     try {
       await actualizarInsumosJornada(insumosPendientes);
 
-      await Promise.all(
-        productosQueSeBloquearian.map((p) => cambiarEstadoJornadaProducto(p.id, false))
-      );
+      await Promise.all([
+        ...productosQueSeBloquearian.map((p) => cambiarEstadoJornadaProducto(p.id, false)),
+        ...Object.entries(stockActivosPendientes).map(([id, stock]) =>
+          actualizarStockProducto(Number(id), stock)
+        ),
+      ]);
 
+      setStockActivosPendientes({});
       await cargarTodo();
     } catch (err) {
       console.error(err);
@@ -340,7 +349,7 @@ export default function JornadaView() {
                   (toca uno para activarlo o desactivarlo)
                 </span>
               </h3>
-              {huboCambiosEnInsumos && (
+              {huboCambiosPendientes && (
                 <button
                   onClick={handleGuardarCambiosJornada}
                   disabled={guardandoInsumos}
@@ -351,7 +360,7 @@ export default function JornadaView() {
               )}
             </div>
 
-            {/*aviso de poco stock de envases */}
+            {/*aviso de poco stock de envases*/}
             {envasesConPocoStock.length > 0 && (
               <div className="mb-4 px-4 py-2.5 rounded-card bg-yellow-500/10 border border-yellow-500/40 text-yellow-400 text-sm font-semibold">
                 Poco stock de envases, asegúrate de reponer:{" "}
@@ -361,7 +370,6 @@ export default function JornadaView() {
               </div>
             )}
 
-            {/* envases: siempre visibles y editables, nunca desaparecen aunque lleguen a 0 */}
             <div className="mb-4">
               <h4 className="text-brand-300 font-semibold text-sm mb-2">Envases</h4>
               <div className="flex flex-wrap gap-2">
@@ -375,6 +383,7 @@ export default function JornadaView() {
                     <input
                       type="number"
                       min="0"
+                      max="1000"
                       value={insumosPendientes.envases?.[key] ?? 0}
                       onChange={(e) => cambiarEnvasePendiente(key, e.target.value)}
                       className="w-16 bg-carbon-800 border border-carbon-600 rounded px-2 py-1 text-white text-sm"
@@ -384,8 +393,6 @@ export default function JornadaView() {
               </div>
             </div>
 
-            {/* resto de los grupos: se listan todos los insumos del catálogo + los personalizados,
-                se puedan haber elegido o no al crear la jornada, para poder activarlos en cualquier momento */}
             {Object.entries(GRUPOS_LABEL).map(([grupo, label]) => {
               const clavesCatalogo = (CONFIG_POR_GRUPO[grupo] || []).map((c) => c.key);
               const clavesPersonalizadas = Object.keys(insumosPendientes?.[grupo] || {});
@@ -441,15 +448,16 @@ export default function JornadaView() {
                 return (
                   <ProductoActivoRow
                     key={p.id}
-                    producto={p}
+                    producto={{
+                      ...p,
+                      stock: stockActivosPendientes[p.id] ?? p.stock,
+                    }}
                     bloqueado={bloqueado}
                     razonBloqueo={razon}
                     eliminando={eliminandoActivoId === p.id}
-                    onCambiarStock={async (stock) => {
-                      await actualizarStockProducto(p.id, stock);
-                      setProductos((prev) =>
-                        prev.map((x) => (x.id === p.id ? { ...x, stock } : x))
-                      );
+                    onCambiarStock={(stock) => {
+                      const clamped = Math.min(150, Math.max(0, Number(stock) || 0));
+                      setStockActivosPendientes((prev) => ({ ...prev, [p.id]: clamped }));
                     }}
                     onEditar={() => setProductoEditando(p)}
                     onEliminar={() => handleEliminarProductoActivo(p)}
@@ -590,8 +598,12 @@ function AgregarFrutaBoton({ onAgregar }) {
 function ProductoActivoRow({ producto, bloqueado, razonBloqueo, eliminando, onCambiarStock, onEditar, onEliminar }) {
   const [stockLocal, setStockLocal] = useState(producto.stock ?? 0);
 
+  useEffect(() => {
+    setStockLocal(producto.stock ?? 0);
+  }, [producto.stock]);
+
   const handleStockChange = (e) => {
-    const nuevoStock = Math.max(0, Number(e.target.value) || 0);
+    const nuevoStock = Math.min(150, Math.max(0, Number(e.target.value) || 0));
     setStockLocal(nuevoStock);
     onCambiarStock(nuevoStock);
   };
@@ -615,6 +627,8 @@ function ProductoActivoRow({ producto, bloqueado, razonBloqueo, eliminando, onCa
             <label className="text-xs text-carbon-400 hidden sm:inline">Stock:</label>
             <input
               type="number"
+              min="0"
+              max="150"
               value={stockLocal}
               onChange={handleStockChange}
               style={{ colorScheme: "dark" }}
