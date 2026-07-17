@@ -617,7 +617,8 @@ function ProductoActivoRow({ producto, bloqueado, razonBloqueo, eliminando, onCa
               type="number"
               value={stockLocal}
               onChange={handleStockChange}
-              className="w-14 px-2 py-1 text-center bg-carbon-800 border border-carbon-600 rounded text-sm text-white focus:outline-none focus:border-brand-500"
+              style={{ colorScheme: "dark" }}
+              className="w-14 px-2 py-1 text-center !bg-carbon-800 !text-white border border-carbon-600 rounded text-sm font-semibold focus:outline-none focus:border-brand-500"
             />
           </div>
         ) : (

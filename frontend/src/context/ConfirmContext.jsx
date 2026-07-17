@@ -30,7 +30,7 @@ export function ConfirmProvider({ children }) {
             className="bg-carbon-800 border border-accent/30 rounded-card w-full max-w-sm p-6 flex flex-col gap-4"
           >
             <h3 className="text-white font-display text-lg font-bold">{estado.titulo}</h3>
-            <p className="text-carbon-200 text-sm">{estado.mensaje}</p>
+            <p className="text-white/90 text-sm">{estado.mensaje}</p>
             <div className="flex gap-3 mt-2">
               <button
                 onClick={() => cerrar(false)}

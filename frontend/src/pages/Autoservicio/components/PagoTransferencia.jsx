@@ -119,7 +119,7 @@ export default function PagoTransferencia() {
         <h3 className="text-white font-display text-xl font-bold">
           Pedido N° {numeroJornada} Recibido
         </h3>
-        <p className="text-yellow-400 font-semibold animate-pulse">
+        <p className="text-yellow-300 font-bold text-base">
           Espera a que el atendedor valide tu transferencia
         </p>
         <p className="text-carbon-400 text-xs max-w-xs">
