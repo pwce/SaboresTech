@@ -346,7 +346,7 @@ export default function JornadaView() {
               <h3 className="font-display font-bold text-white">
                 Insumos de la jornada{" "}
                 <span className="text-carbon-400 text-sm font-normal block sm:inline">
-                  (toca uno para activarlo o desactivarlo)
+                  (Toca uno para activarlo o desactivarlo)
                 </span>
               </h3>
               {huboCambiosPendientes && (

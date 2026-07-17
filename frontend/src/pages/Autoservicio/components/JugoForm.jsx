@@ -12,17 +12,15 @@ export default function JugoForm({ onCambiar, frutasDisponibles, endulzantesDisp
   const [frutas, setFrutas] = useState([]);
 
   function toggleFruta(frutaKey) {
-    setFrutas((prev) => {
-      let nuevas;
-      if (prev.includes(frutaKey)) {
-        nuevas = prev.filter((f) => f !== frutaKey);
-      } else {
-        if (prev.length >= MAX_FRUTAS) return prev;
-        nuevas = [...prev, frutaKey];
-      }
-      emitir(endulzante, nuevas);
-      return nuevas;
-    });
+    let nuevas;
+    if (frutas.includes(frutaKey)) {
+      nuevas = frutas.filter((f) => f !== frutaKey);
+    } else {
+      if (frutas.length >= MAX_FRUTAS) return;
+      nuevas = [...frutas, frutaKey];
+    }
+    setFrutas(nuevas);
+    emitir(endulzante, nuevas);
   }
 
   function emitir(end, frutKeys) {

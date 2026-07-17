@@ -1,7 +1,6 @@
 // jornada.validation.js
 import Joi from 'joi';
 
-// limite maximo de 1000 para envases
 const envasesSchema = Joi.object({
   vasos: Joi.number().integer().min(0).max(1000).required().messages({
     'number.max': 'La cantidad de vasos no puede superar las 1000 unidades.',
@@ -34,15 +33,15 @@ const insumosDisponiblesSchema = Joi.object({
 });
 
 export const iniciarJornadaSchema = Joi.object({
-  fecha: Joi.date().iso().required().messages({
-    'date.base': 'La fecha de jornada no es válida.',
-    'any.required': 'La fecha de la jornada es obligatoria.'
-  }),
-  montoInicial: Joi.number().min(0).required().messages({
-    'number.min': 'El monto inicial no puede ser negativo.',
-    'any.required': 'El monto inicial en caja es requerido.'
-  }),
-  insumosDisponibles: insumosDisponiblesSchema.required()
+  insumosDisponibles: insumosDisponiblesSchema.required(),
+  productosSeleccionados: Joi.array().items(
+    Joi.object({
+      id: Joi.number().integer().required(),
+      stock: Joi.number().integer().min(0).max(150).allow(null).optional().messages({
+        'number.max': 'El stock inicial de un producto no puede superar las 150 unidades.'
+      })
+    })
+  ).optional()
 });
 
 export const actualizarInsumosSchema = Joi.object({
