@@ -14,7 +14,7 @@ export default function MenuScreen() {
 
   const [categoriaActiva, setCategoriaActiva] = useState(CATEGORIAS_PRODUCTO[0]);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
-  
+
   const [productosReal, setProductosReal] = useState([]);
   const [insumosJornada, setInsumosJornada] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -62,6 +62,21 @@ export default function MenuScreen() {
     return (
       <div className="min-h-screen bg-carbon-900 flex items-center justify-center text-rose-400 p-4 text-center">
         {error}
+      </div>
+    );
+  }
+
+  if (!insumosJornada) {
+    return (
+      <div className="min-h-screen bg-carbon-900 flex flex-col items-center justify-center text-center px-6 gap-3">
+        <span className="text-4xl"></span>
+        <h2 className="text-white font-display text-xl font-bold">
+          Local cerrado por el momento
+        </h2>
+        <p className="text-carbon-300 text-sm max-w-sm">
+          No hay ninguna jornada activa ahora mismo, así que no se pueden tomar pedidos.
+          Vuelve a intentarlo más tarde.
+        </p>
       </div>
     );
   }

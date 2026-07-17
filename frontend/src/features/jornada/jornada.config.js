@@ -24,6 +24,7 @@ export function insumosVacios() {
       vainilla: false,
       menta: false,
       salsas: false,
+      salsaVerde: false,
     },
     agotados: [],
   };
@@ -67,6 +68,7 @@ export const EXTRAS_CONFIG = [
   { key: "vainilla", label: "Vainilla en polvo" },
   { key: "menta", label: "Menta" },
   { key: "salsas", label: "Salsas" },
+  { key: "salsaVerde", label: "Salsa verde" },
 ];
 
 export const CATEGORIAS_PRODUCTO = ["Salado", "Dulce", "Bebestibles"];
@@ -145,7 +147,6 @@ export const RECETAS_BEBESTIBLES = [
     mensajeFaltante: "Faltan leche, hielo, endulzante o café.",
   },
   {
-
     id: "frappeGenerico",
     keywords: ["frap"],
     requiere: { leches: "alguna", hielo: true, endulzantes: "alguna" },
@@ -153,11 +154,6 @@ export const RECETAS_BEBESTIBLES = [
   },
 ];
 
-/**
- * encuentra la receta que corresponde a un producto según su nombre.
- * @param {string} nombre
- * @returns {object|null}
- */
 export function obtenerRecetaBebestible(nombre = "") {
   const n = nombre.toLowerCase();
   return RECETAS_BEBESTIBLES.find((r) => r.keywords.some((k) => n.includes(k))) || null;
@@ -172,18 +168,12 @@ export const LABELS_POR_GRUPO = {
   extras: Object.fromEntries(EXTRAS_CONFIG.map((i) => [i.key, i.label])),
 };
 
-//obtiene el nombre legible de un insumo puntual 
 export function obtenerLabelInsumo(grupo, key, insumos) {
   const labelPersonalizado = insumos?.customLabels?.[`${grupo}.${key}`];
   if (labelPersonalizado) return labelPersonalizado;
   return LABELS_POR_GRUPO[grupo]?.[key] || key;
 }
 
-/**
- * genera una key sin tildes/espacios a partir de un nombre libre, para
- * poder guardar insumos personalizados (ej: una fruta nueva) dentro del
- * mismo objeto plano {key: boolean} que ya usan los insumos fijos.
- */
 export function slugificarInsumo(nombre) {
   return nombre
     .normalize("NFD")
@@ -195,9 +185,9 @@ export function slugificarInsumo(nombre) {
 }
 
 /**
- * agrega un insumo personalizado (ej: una fruta nueva) al objeto de insumos,
+ * agrega un insumo personalizado al objeto de insumos,
  * marcándolo disponible y guardando su nombre legible original.
- * @returns {object} una copia actualizada de `insumos`
+ * @returns {object} una copia actualizada de insumos
  */
 export function agregarInsumoPersonalizado(insumos, grupo, nombreLibre) {
   const key = slugificarInsumo(nombreLibre);
@@ -207,4 +197,3 @@ export function agregarInsumoPersonalizado(insumos, grupo, nombreLibre) {
   copia.customLabels = { ...(copia.customLabels || {}), [`${grupo}.${key}`]: nombreLibre.trim() };
   return copia;
 }
-

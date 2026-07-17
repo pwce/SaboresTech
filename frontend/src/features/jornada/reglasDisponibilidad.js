@@ -12,19 +12,9 @@ export function algunoDisponible(insumos, grupo) {
   return Object.keys(valores).some((key) => insumoDisponible(insumos, grupo, key));
 }
 
-
-/**
- * evalúa si un producto (bebestible sin stock fijo) se puede vender hoy,
- * segun su receta específica y los insumos configurados para la jornada
- *
- * @param {string} nombreProducto
- * @param {object} insumos - insumosForm / insumosDisponibles de la jornada
- * @returns {{ esSinStock: boolean, bloqueado: boolean, razon: string }}
- */
 export function evaluarDisponibilidadProducto(nombreProducto, insumos) {
   const receta = obtenerRecetaBebestible(nombreProducto);
 
-  // no es un bebestible sin stock fijo como pizza, empanadas o bebidas en lata
   if (!receta) {
     return { esSinStock: false, bloqueado: false, razon: "" };
   }
@@ -83,5 +73,6 @@ export function obtenerOpcionesDisponibles(insumos) {
     frutasDisponibles: opcionesDisponiblesDelGrupo(insumos, "frutas"),
     lechesDisponibles: opcionesDisponiblesDelGrupo(insumos, "leches"),
     endulzantesDisponibles: opcionesDisponiblesDelGrupo(insumos, "endulzantes"),
+    salsaVerdeDisponible: insumoDisponible(insumos, "extras", "salsaVerde"),
   };
 }

@@ -2,6 +2,9 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { obtenerJornadas, obtenerGastos, crearGasto, marcarReembolsoHecho } from "../../api/gastos.service";
+import { useConfirm } from "../../context/ConfirmContext";
+import { useToast } from "../../context/ToastContext";
+
 
 const CATEGORIAS = [
   { value: "compra_insumos", label: "Compra de insumos" },
@@ -35,7 +38,8 @@ const FORM_INICIAL = {
 export default function GestionGastos() {
   const { rol } = useAuth();
   const esDuena = rol === "dueña";
-
+  const mostrarToast = useToast();
+  const confirmar = useConfirm();
   const [jornadas, setJornadas] = useState([]);
   const [jornadaId, setJornadaId] = useState(null);
   const [gastos, setGastos] = useState([]);
@@ -68,26 +72,26 @@ export default function GestionGastos() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!jornadaId) return alert("Selecciona a qué jornada pertenece este gasto.");
+    if (!jornadaId) return mostrarToast("Selecciona a qué jornada pertenece este gasto.", "error");
     setEnviando(true);
     try {
       await crearGasto({ ...form, jornadaId });
       setForm(FORM_INICIAL);
       cargarGastos();
     } catch (error) {
-      alert(error.response?.data?.mensaje || "Error al registrar el gasto");
+      mostrarToast(error.response?.data?.mensaje || "Error al registrar el gasto", "error");
     } finally {
       setEnviando(false);
     }
   };
 
   const handleReembolso = async (gastoId) => {
-    if (!window.confirm("¿Confirmas que este reembolso ya fue pagado?")) return;
+    const ok = await confirmar({ mensaje: "¿Confirmas que este reembolso ya fue pagado?" }); if (!ok) return;
     try {
       await marcarReembolsoHecho(gastoId);
       cargarGastos();
     } catch (error) {
-      alert(error.response?.data?.mensaje || "Error al marcar el reembolso");
+      mostrarToast(error.response?.data?.mensaje || "Error al marcar el reembolso", "error");
     }
   };
 

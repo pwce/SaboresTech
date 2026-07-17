@@ -1,11 +1,13 @@
 // ProductosAdminView.jsx
 import React, { useState, useEffect } from 'react';
+import { useToast } from "../../context/ToastContext";
 
 export default function ProductosAdminView() {
+  const mostrarToast = useToast();
 
   // estado para los productos
   const [productos, setProductos] = useState([]);
-  
+
   // estado para el formulario de nuevo producto
   const [nuevoProducto, setNuevoProducto] = useState({
     nombre: '',
@@ -116,11 +118,11 @@ export default function ProductosAdminView() {
     });
     
     e.target.reset();
-    alert("¡Producto creado y guardado con éxito!");
+    mostrarToast("Producto creado y guardado con éxito", "exito");
 
   } catch (error) {
     console.error("Error al conectar con la API:", error);
-    alert("Hubo un problema al guardar el producto. Verifica la conexión.");
+    mostrarToast("Hubo un problema al guardar el producto. Verifica la conexión.", "error");
   }
 };
 
@@ -138,7 +140,7 @@ export default function ProductosAdminView() {
       insumosDisponibles: insumosHoy
     };
     console.log("ENVIANDO A BASE DE DATOS:", configuracionTotal);
-    alert("¡Jornada de Sabores de Carolina configurada con éxito!");
+    mostrarToast("¡Jornada de Sabores de Carolina configurada con éxito!", "exito");
   };
 
   const categorias = ['empanadas', 'pizzas', 'frappes', 'jugos', 'milkshakes', 'bebidas'];

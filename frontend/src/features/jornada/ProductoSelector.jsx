@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { CATEGORIAS_PRODUCTO, esProductoDeStockFijoPorNombre } from "./jornada.config";
 import { evaluarDisponibilidadProducto } from "./reglasDisponibilidad";
 import { IconEditar, IconEliminar } from "../../components/Icons";
+import { useConfirm } from "../../context/ConfirmContext";
 
 export default function ProductoSelector({
   productos,
@@ -14,6 +15,7 @@ export default function ProductoSelector({
   onActualizarProducto,
   onEliminarProducto,
 }) {
+  const confirmar = useConfirm();
   const [formAbierto, setFormAbierto] = useState(false);
   const [nuevo, setNuevo] = useState({ nombre: "", precio: "", categoria: "Salado", controlaStock: true });
   const [imagenFile, setImagenFile] = useState(null);
@@ -73,8 +75,16 @@ export default function ProductoSelector({
     }
   };
 
+  // FIX: reemplaza window.confirm por el popup estilizado
   const handleEliminar = async (p) => {
-    if (!window.confirm(`¿Eliminar "${p.nombre}" del catálogo? Esta acción no se puede deshacer.`)) return;
+    const ok = await confirmar({
+      titulo: "Eliminar producto",
+      mensaje: `¿Eliminar "${p.nombre}" del catálogo? Esta acción no se puede deshacer.`,
+      confirmarTexto: "Eliminar",
+      peligroso: true,
+    });
+    if (!ok) return;
+
     setEliminandoId(p.id);
     try {
       await onEliminarProducto(p.id);

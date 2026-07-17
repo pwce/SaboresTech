@@ -1,21 +1,37 @@
 // SandwichForm.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function SandwichForm({ onCambiar }) {
+export default function SandwichForm({ onCambiar, salsaVerdeDisponible }) {
   const [salsa, setSalsa] = useState("no");
 
   function emitir(overrides = {}) {
     const estado = { salsa, ...overrides };
     onCambiar({
       ...estado,
-      resumen: `Salsa: ${estado.salsa === "si" ? "sí" : "no"}`,
+      resumen: salsaVerdeDisponible
+        ? `Salsa verde: ${estado.salsa === "si" ? "sí" : "no"}`
+        : "Sin personalización",
     });
+  }
+
+  useEffect(() => {
+    if (!salsaVerdeDisponible) {
+      onCambiar({ salsa: "no", resumen: "Sin personalización" });
+    }
+  }, [salsaVerdeDisponible]);
+
+  if (!salsaVerdeDisponible) {
+    return (
+      <p className="text-carbon-300 text-sm italic">
+        Este producto no requiere personalización adicional.
+      </p>
+    );
   }
 
   return (
     <div className="flex flex-col gap-6">
       <fieldset>
-        <legend className="text-white font-medium mb-2">¿Agregar salsa?</legend>
+        <legend className="text-white font-medium mb-2">¿Agregar salsa verde?</legend>
         <div className="flex gap-3">
           {[["si", "Sí"], ["no", "No"]].map(([val, txt]) => (
             <button

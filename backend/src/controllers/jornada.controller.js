@@ -3,7 +3,6 @@ import { AppDataSource } from '../config/configDb.js';
 import { JornadaEntity } from '../entities/jornada.entity.js';
 import { ProductoEntity } from '../entities/producto.entity.js';
 
-
 const jornadaRepository = AppDataSource.getRepository(JornadaEntity);
 
 function obtenerFechaHoraChile() {
@@ -55,7 +54,7 @@ export async function obtenerJornadas(req, res) {
         const jornadas = await jornadaRepository.find({
             order: { id: 'DESC' },
         });
- 
+
         return res.status(200).json({
             success: true,
             data: jornadas.map((j) => ({
@@ -128,10 +127,8 @@ export async function guardarJornada(req, res) {
     }
 }
 
-
 export async function finalizarJornada(req, res) {
     try {
-
         const jornadaActiva = await jornadaRepository.findOne({
             where: { activa: true },
             order: { id: 'DESC' }
@@ -148,6 +145,9 @@ export async function finalizarJornada(req, res) {
         jornadaActiva.fechaFin = obtenerFechaHoraChile();
 
         await jornadaRepository.save(jornadaActiva);
+
+        const productoRepository = AppDataSource.getRepository(ProductoEntity);
+        await productoRepository.update({ enJornada: true }, { enJornada: false });
 
         return res.status(200).json({
             success: true,
@@ -167,6 +167,7 @@ export async function finalizarJornada(req, res) {
         });
     }
 }
+
 
 export async function actualizarInsumosJornada(req, res) {
     try {

@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { obtenerJornadas } from "../../api/gastos.service";
 import { obtenerCajaPorJornada, abrirCaja, cerrarCaja, obtenerHistorialCajas } from "../../api/caja.service";
 import Modal from "../../components/Modal";
+import { useToast } from "../../context/ToastContext";
+import { useConfirm } from "../../context/ConfirmContext";
+
 
 function etiquetaJornada(j) {
   const inicio = new Date(j.fechaInicio).toLocaleDateString("es-CL");
@@ -14,6 +17,8 @@ function formatoMoneda(valor) {
 }
 
 export default function GestionCaja() {
+  const mostrarToast = useToast();
+  const confirmar = useConfirm();
   const [jornadas, setJornadas] = useState([]);
   const [jornadaId, setJornadaId] = useState(null);
   const [caja, setCaja] = useState(null);
@@ -59,12 +64,13 @@ export default function GestionCaja() {
     e.preventDefault();
     setProcesando(true);
     try {
-      await abrirCaja(jornadaId, Number(saldoInicialInput));
+      const resultado = await abrirCaja(jornadaId, Number(saldoInicialInput));
       setModalAbrir(false);
       setSaldoInicialInput("");
+      mostrarToast(resultado.mensaje, "exito");
       cargarCaja();
     } catch (error) {
-      alert(error.response?.data?.mensaje || "Error al abrir la caja");
+      mostrarToast(error.response?.data?.mensaje || "Error al abrir la caja", "error");
     } finally {
       setProcesando(false);
     }
@@ -77,11 +83,11 @@ export default function GestionCaja() {
       const resultado = await cerrarCaja(caja.id, Number(saldoContadoInput));
       setModalCerrar(false);
       setSaldoContadoInput("");
-      alert(resultado.mensaje);
+      mostrarToast(resultado.mensaje, "exito");
       cargarCaja();
       setHistorial(await obtenerHistorialCajas());
     } catch (error) {
-      alert(error.response?.data?.mensaje || "Error al cerrar la caja");
+      mostrarToast(error.response?.data?.mensaje || "Error al cerrar la caja", "error");
     } finally {
       setProcesando(false);
     }
