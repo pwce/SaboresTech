@@ -1,4 +1,3 @@
-// PagoTransferencia.jsx
 import { useState, useEffect } from "react";
 import { useAutoservicio } from "../../../context/AutoservicioContext";
 import axiosClient from "../../../api/axiosClient";

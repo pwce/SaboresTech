@@ -1,4 +1,3 @@
-// ProductosAdminView.jsx
 import React, { useState, useEffect } from 'react';
 import { useToast } from "../../context/ToastContext";
 

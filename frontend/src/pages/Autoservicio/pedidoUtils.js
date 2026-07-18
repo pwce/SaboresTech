@@ -1,4 +1,3 @@
-//pedidoUtils.js
 export function construirProductosPedido(carrito) {
   return carrito.map((item) => ({
     producto_id: item.productoId,

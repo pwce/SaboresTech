@@ -1,4 +1,3 @@
-// CategoriaTabs.jsx
 export default function CategoriaTabs({ categorias, activa, onChange }) {
   return (
     <div className="flex gap-3 overflow-x-auto px-4 py-4 bg-carbon-900 sticky top-0 z-10 border-b border-accent/20">

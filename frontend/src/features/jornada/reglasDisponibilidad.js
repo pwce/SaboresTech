@@ -1,4 +1,3 @@
-// reglasDisponibilidad.js
 import { obtenerRecetaBebestible, obtenerLabelInsumo } from "./jornada.config";
 
 export function insumoDisponible(insumos, grupo, key) {

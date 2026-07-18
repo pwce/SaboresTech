@@ -1,4 +1,3 @@
-// validador.middleware.js
 export function validarSchema(schema) {
     return (req, res, next) => {
         

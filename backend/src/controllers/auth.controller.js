@@ -1,4 +1,3 @@
-// auth.controller.js
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { AppDataSource } from '../config/configDb.js';

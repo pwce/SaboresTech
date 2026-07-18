@@ -1,4 +1,3 @@
-// PagoScreen.jsx
 import { useState } from "react";
 import { useAutoservicio, PASOS } from "../../context/AutoservicioContext";
 import PagoEfectivo from "./components/PagoEfectivo";

@@ -1,4 +1,3 @@
-// CarritoScreen.jsx
 import { useAutoservicio, PASOS } from "../../context/AutoservicioContext";
 import { IconEliminar } from "../../components/Icons";
 

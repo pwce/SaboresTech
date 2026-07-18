@@ -1,4 +1,3 @@
-// verificarToken.middleware.js
 import jwt from 'jsonwebtoken';
 
 export const verificarToken = (rolesPermitidos = []) => {

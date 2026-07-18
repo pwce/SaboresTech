@@ -1,4 +1,3 @@
-// SandwichForm.jsx
 import { useState, useEffect } from "react";
 
 export default function SandwichForm({ onCambiar, salsaVerdeDisponible }) {

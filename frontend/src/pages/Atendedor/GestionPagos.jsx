@@ -1,4 +1,3 @@
-// GestionPagos.jsx
 import { useEffect, useState } from "react";
 import axiosClient from "../../api/axiosClient";
 import { IconExito } from "../../components/Icons";

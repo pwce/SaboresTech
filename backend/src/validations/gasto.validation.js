@@ -1,4 +1,3 @@
-// gasto.validation.js
 import Joi from 'joi';
 
 const CATEGORIAS_VALIDAS = ['compra_insumos', 'bencina', 'permiso_municipal', 'impuestos', 'sueldos', 'otros'];

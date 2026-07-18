@@ -1,4 +1,3 @@
-// InsumosForm.jsx
 import React, { useState } from "react";
 import {
   ENVASES_CONFIG,

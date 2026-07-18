@@ -1,4 +1,3 @@
-// productos.controller.js 
 import { AppDataSource } from '../config/configDb.js';
 import { ProductoEntity } from '../entities/producto.entity.js';
 

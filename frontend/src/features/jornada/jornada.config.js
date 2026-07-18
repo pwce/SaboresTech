@@ -1,4 +1,3 @@
-// jornada.config.js
 export function insumosVacios() {
   return {
     envases: { vasos: 0, tapas: 0, bombillas: 0 },

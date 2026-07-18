@@ -1,7 +1,7 @@
-// GestionGastos.jsx
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { obtenerJornadas, obtenerGastos, crearGasto, marcarReembolsoHecho } from "../../api/gastos.service";
+import SelectorJornadaPorFecha from "../../components/SelectorJornadaPorFecha";
 import { useConfirm } from "../../context/ConfirmContext";
 import { useToast } from "../../context/ToastContext";
 
@@ -21,11 +21,6 @@ const METODOS_PAGO = [
   { value: "tarjeta", label: "Tarjeta" },
   { value: "terceros", label: "Dinero de terceros" },
 ];
-
-function etiquetaJornada(j) {
-  const inicio = new Date(j.fechaInicio).toLocaleDateString("es-CL");
-  return j.activa ? `Jornada actual (desde ${inicio})` : `Jornada del ${inicio}`;
-}
 
 const FORM_INICIAL = {
   nombreOperacion: "",
@@ -107,17 +102,8 @@ export default function GestionGastos() {
       </header>
 
       {/* selector de jornada */}
-      <div className="max-w-md">
-        <label className="text-sm text-carbon-300 mb-1 block">Jornada a la que pertenece</label>
-        <select
-          value={jornadaId ?? ""}
-          onChange={(e) => setJornadaId(Number(e.target.value))}
-          className="w-full px-3 py-2 bg-carbon-800 border border-carbon-700 rounded text-white"
-        >
-          {jornadas.map((j) => (
-            <option key={j.id} value={j.id}>{etiquetaJornada(j)}</option>
-          ))}
-        </select>
+      <div className="max-w-2xl">
+        <SelectorJornadaPorFecha jornadas={jornadas} jornadaId={jornadaId} onChange={setJornadaId} />
       </div>
 
       {/* formulario de nuevo gasto */}

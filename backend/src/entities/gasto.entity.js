@@ -1,4 +1,3 @@
-// gasto.entity.js
 import { EntitySchema } from 'typeorm';
 
 export const GastoEntity = new EntitySchema({

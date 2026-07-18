@@ -1,4 +1,3 @@
-// ProductoModal.jsx
 import { useState } from "react";
 import { useAutoservicio } from "../../../context/AutoservicioContext";
 import { obtenerOpcionesDisponibles } from "../../../features/jornada/reglasDisponibilidad";

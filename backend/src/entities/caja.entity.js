@@ -1,4 +1,3 @@
-// caja.entity.js
 import { EntitySchema } from 'typeorm';
 
 export const CajaEntity = new EntitySchema({

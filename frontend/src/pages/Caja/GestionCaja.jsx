@@ -1,16 +1,18 @@
-// GestionCaja.jsx
 import { useEffect, useState } from "react";
 import { obtenerJornadas } from "../../api/gastos.service";
 import { obtenerCajaPorJornada, abrirCaja, cerrarCaja, obtenerHistorialCajas } from "../../api/caja.service";
+import { obtenerReporteJornada, obtenerResumenPeriodo } from "../../api/reportes.service";
 import Modal from "../../components/Modal";
+import SelectorJornadaPorFecha from "../../components/SelectorJornadaPorFecha";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmContext";
+import {
+  PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+} from "recharts";
 
-
-function etiquetaJornada(j) {
-  const inicio = new Date(j.fechaInicio).toLocaleDateString("es-CL");
-  return j.activa ? `Jornada actual (desde ${inicio})` : `Jornada del ${inicio}`;
-}
+const COLORES_METODO = { efectivo: "#22c55e", transferencia: "#38bdf8", tarjeta: "#f59e0b" };
+const COLORES_PRODUCTO = ["#22c55e", "#38bdf8", "#f59e0b", "#a855f7", "#ef4444", "#14b8a6", "#eab308", "#ec4899"];
 
 function formatoMoneda(valor) {
   return `$${Number(valor || 0).toLocaleString("es-CL")}`;
@@ -32,6 +34,13 @@ export default function GestionCaja() {
   const [modalCerrar, setModalCerrar] = useState(false);
   const [saldoContadoInput, setSaldoContadoInput] = useState("");
 
+  const [reporteJornada, setReporteJornada] = useState(null);
+  const [cargandoReporte, setCargandoReporte] = useState(true);
+
+  const [tipoResumen, setTipoResumen] = useState("semanal");
+  const [resumenPeriodo, setResumenPeriodo] = useState([]);
+  const [cargandoResumen, setCargandoResumen] = useState(true);
+
   useEffect(() => {
     (async () => {
       const lista = await obtenerJornadas();
@@ -42,23 +51,42 @@ export default function GestionCaja() {
     })();
   }, []);
 
-  const cargarCaja = async () => {
+
+  const cargarCaja = async (mostrarCargando = true) => {
     if (!jornadaId) return;
-    setCargando(true);
+    if (mostrarCargando) setCargando(true);
     try {
       setCaja(await obtenerCajaPorJornada(jornadaId));
     } catch (error) {
       console.error("Error al consultar la caja:", error);
     } finally {
-      setCargando(false);
+      if (mostrarCargando) setCargando(false);
     }
   };
 
   useEffect(() => {
-    cargarCaja();
-    const interval = setInterval(cargarCaja, 5000);
+    cargarCaja(true);
+    const interval = setInterval(() => cargarCaja(false), 5000);
     return () => clearInterval(interval);
   }, [jornadaId]);
+
+  useEffect(() => {
+    if (!jornadaId) return;
+    setCargandoReporte(true);
+    obtenerReporteJornada(jornadaId)
+      .then(setReporteJornada)
+      .catch((error) => console.error("Error al consultar el reporte de la jornada:", error))
+      .finally(() => setCargandoReporte(false));
+  }, [jornadaId]);
+
+  useEffect(() => {
+    setCargandoResumen(true);
+    obtenerResumenPeriodo(tipoResumen)
+      .then(setResumenPeriodo)
+      .catch((error) => console.error("Error al consultar el resumen por periodo:", error))
+      .finally(() => setCargandoResumen(false));
+  }, [tipoResumen]);
+
 
   const handleAbrirCaja = async (e) => {
     e.preventDefault();
@@ -100,15 +128,7 @@ export default function GestionCaja() {
           <h1 className="text-2xl font-bold font-display text-brand-400">Control de Caja y Reportes</h1>
           <p className="text-carbon-300 text-sm">Apertura, cierre y arqueo de caja por jornada.</p>
         </div>
-        <select
-          value={jornadaId ?? ""}
-          onChange={(e) => setJornadaId(Number(e.target.value))}
-          className="px-3 py-2 bg-carbon-800 border border-carbon-700 rounded text-white text-sm"
-        >
-          {jornadas.map((j) => (
-            <option key={j.id} value={j.id}>{etiquetaJornada(j)}</option>
-          ))}
-        </select>
+        <SelectorJornadaPorFecha jornadas={jornadas} jornadaId={jornadaId} onChange={setJornadaId} />
       </header>
 
       {cargando ? (
@@ -123,13 +143,36 @@ export default function GestionCaja() {
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <BloqueResumen label="Saldo Inicial" valor={caja.saldoInicial} color="text-white" />
-            <BloqueResumen label="Ingresos" valor={caja.ingresos} color="text-green-400" prefijo="+" />
-            <BloqueResumen label="Salidas" valor={caja.salidas} color="text-red-400" prefijo="-" />
-            <BloqueResumen label="Saldo Final" valor={caja.saldoFinalContado ?? caja.saldoFinalTeorico} color="text-brand-400" />
+            <BloqueResumen label="Saldo Inicial (sencillo)" valor={caja.saldoInicial} color="text-white" />
+            <BloqueResumen label="Ingresos en efectivo" valor={caja.ingresos} color="text-green-400" prefijo="+" />
+            <BloqueResumen label="Salidas en efectivo" valor={caja.salidas} color="text-red-400" prefijo="-" />
+            <BloqueResumen label="Efectivo esperado en caja" valor={caja.saldoFinalContado ?? caja.saldoFinalTeorico} color="text-brand-400" />
           </div>
 
-          <p className="text-xs text-carbon-400">
+          <div className="bg-carbon-800 border border-carbon-700 rounded-card p-4">
+            <p className="text-xs text-carbon-400 uppercase tracking-wide mb-1">Ganancia real de la jornada</p>
+            <p className={`text-2xl font-black ${caja.gananciaReal >= 0 ? "text-green-400" : "text-estado-agotado"}`}>
+              {formatoMoneda(caja.gananciaReal)}
+            </p>
+            <p className="text-sm md:text-base text-white mt-2 leading-relaxed">
+              Ventas totales {formatoMoneda(caja.ventasTotales)} (efectivo + transferencia + tarjeta) − gastos {formatoMoneda(caja.gastosTotales)}.
+              No incluye el saldo inicial: eso es solo el sencillo con el que se abrió la caja, no es ganancia.
+            </p>
+            {caja.ventasPorMetodo && Object.keys(caja.ventasPorMetodo).length > 0 && (
+              <div className="flex flex-wrap gap-3 mt-3">
+                {Object.entries(caja.ventasPorMetodo).map(([metodo, monto]) => {
+                  const porcentaje = caja.ventasTotales > 0 ? Math.round((monto / caja.ventasTotales) * 100) : 0;
+                  return (
+                    <span key={metodo} className="text-xs px-3 py-1.5 rounded-full bg-carbon-900 border border-carbon-600 text-carbon-200 capitalize">
+                      {metodo}: {formatoMoneda(monto)} ({porcentaje}%)
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <p className="text-sm md:text-base text-white font-medium">
             {caja.cantidadPedidos} pedido(s) pagados · {caja.cantidadGastos} gasto(s) registrados
             {caja.estado === 'abierta' && ` · caja abierta desde ${new Date(caja.fechaApertura).toLocaleString("es-CL")}`}
           </p>
@@ -191,6 +234,85 @@ export default function GestionCaja() {
       </Modal>
 
       <section>
+        <h2 className="text-lg font-semibold text-carbon-100 mb-3">Reportes de la jornada</h2>
+
+        {cargandoReporte ? (
+          <p className="text-carbon-400 text-sm">Cargando reporte...</p>
+        ) : !reporteJornada || reporteJornada.cantidadPedidos === 0 ? (
+          <p className="text-carbon-500 text-sm italic">Todavía no hay ventas validadas en esta jornada.</p>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-4 items-start">
+            <GraficoTorta
+              titulo="Ventas por método de pago"
+              datos={Object.entries(reporteJornada.ventasPorMetodo).map(([nombre, valor]) => ({
+                nombre,
+                valor,
+              }))}
+              obtenerColor={(nombre) => COLORES_METODO[nombre] || "#71717a"}
+              alturaGrafico={260}
+            />
+            <div className="md:col-span-2">
+              <GraficoTorta
+                titulo="Ventas por producto"
+                datos={reporteJornada.ventasPorProducto.map((p) => ({ nombre: p.nombre, valor: p.monto }))}
+                obtenerColor={(_, i) => COLORES_PRODUCTO[i % COLORES_PRODUCTO.length]}
+                alturaGrafico={360}
+                mostrarEtiquetas={reporteJornada.ventasPorProducto.length <= 5}
+              />
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h2 className="text-lg font-semibold text-carbon-100">Resumen por periodo</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setTipoResumen("semanal")}
+              className={`px-3 py-1.5 rounded-full text-sm font-semibold border ${
+                tipoResumen === "semanal" ? "bg-brand-500 border-brand-500 text-carbon-900" : "border-carbon-600 text-carbon-300"
+              }`}
+            >
+              Semanal
+            </button>
+            <button
+              onClick={() => setTipoResumen("mensual")}
+              className={`px-3 py-1.5 rounded-full text-sm font-semibold border ${
+                tipoResumen === "mensual" ? "bg-brand-500 border-brand-500 text-carbon-900" : "border-carbon-600 text-carbon-300"
+              }`}
+            >
+              Mensual
+            </button>
+          </div>
+        </div>
+
+        {cargandoResumen ? (
+          <p className="text-carbon-400 text-sm">Cargando resumen...</p>
+        ) : resumenPeriodo.length === 0 ? (
+          <p className="text-carbon-500 text-sm italic">Aún no hay jornadas registradas para resumir.</p>
+        ) : (
+          <div className="bg-carbon-800 border border-carbon-700 rounded-card p-4" style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={resumenPeriodo}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
+                <XAxis dataKey="periodo" stroke="#a1a1aa" fontSize={12} />
+                <YAxis stroke="#a1a1aa" fontSize={12} />
+                <Tooltip
+                  contentStyle={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 8 }}
+                  formatter={(valor) => formatoMoneda(valor)}
+                />
+                <Legend />
+                <Bar dataKey="ventas" name="Ventas" fill="#22c55e" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey="gastos" name="Gastos" fill="#ef4444" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey="gananciaReal" name="Ganancia real" fill="#38bdf8" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </section>
+
+      <section>
         <h2 className="text-lg font-semibold text-carbon-100 mb-3">Historial de cajas</h2>
         {historial.length === 0 ? (
           <p className="text-carbon-500 text-sm italic">Aún no hay cajas cerradas.</p>
@@ -232,6 +354,43 @@ function BloqueResumen({ label, valor, color, prefijo = "" }) {
     <div className="bg-carbon-800 border border-carbon-700 rounded-card p-4">
       <p className="text-xs text-carbon-400 uppercase tracking-wide">{label}</p>
       <p className={`text-2xl font-black mt-1 ${color}`}>{prefijo}{`$${Number(valor || 0).toLocaleString("es-CL")}`}</p>
+    </div>
+  );
+}
+
+function GraficoTorta({ titulo, datos, obtenerColor, alturaGrafico = 240, mostrarEtiquetas = true }) {
+  const total = datos.reduce((acc, d) => acc + d.valor, 0);
+  const radio = mostrarEtiquetas ? Math.min(alturaGrafico * 0.3, 100) : Math.min(alturaGrafico * 0.38, 140);
+  return (
+    <div className="bg-carbon-800 border border-carbon-700 rounded-card p-4" style={{ height: alturaGrafico + 60 }}>
+      <p className="text-sm font-semibold text-carbon-200 mb-2">{titulo}</p>
+      <ResponsiveContainer width="100%" height={alturaGrafico}>
+        <PieChart>
+          <Pie
+            data={datos}
+            dataKey="valor"
+            nameKey="nombre"
+            cx="50%"
+            cy="50%"
+            outerRadius={radio}
+            isAnimationActive={false}
+            label={
+              mostrarEtiquetas
+                ? ({ nombre, valor }) => `${nombre} (${total > 0 ? Math.round((valor / total) * 100) : 0}%)`
+                : false
+            }
+          >
+            {datos.map((d, i) => (
+              <Cell key={d.nombre} fill={obtenerColor(d.nombre, i)} />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 8 }}
+            formatter={(valor, nombre) => [formatoMoneda(valor), nombre]}
+          />
+          <Legend wrapperStyle={{ fontSize: 12 }} />
+        </PieChart>
+      </ResponsiveContainer>
     </div>
   );
 }

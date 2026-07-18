@@ -1,4 +1,3 @@
-//validar.middleware.js
 export const validarSchema = (schema) => {
   return (req, res, next) => {
     const { error } = schema.validate(req.body, { abortEarly: false });

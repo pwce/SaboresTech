@@ -1,4 +1,3 @@
-// pedido.entity.js
 import { EntitySchema } from 'typeorm';
 
 export const PedidoEntity = new EntitySchema({

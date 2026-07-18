@@ -1,4 +1,3 @@
-// detallePedido.validation.js
 import Joi from 'joi';
 
 const detallePedidoSchema = Joi.object({

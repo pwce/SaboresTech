@@ -1,4 +1,3 @@
-// Modal.jsx
 import React from "react";
 
 export default function Modal({ open, onClose, title, children, maxWidth = "max-w-lg" }) {

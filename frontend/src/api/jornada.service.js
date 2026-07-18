@@ -1,4 +1,3 @@
-// jornada.service.js
 import axiosClient from "./axiosClient";
 
 /**

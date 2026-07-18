@@ -1,4 +1,3 @@
-// jornada.validation.js
 import Joi from 'joi';
 
 const envasesSchema = Joi.object({

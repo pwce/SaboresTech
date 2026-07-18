@@ -1,4 +1,3 @@
-// AutoservicioView.jsx
 import { AutoservicioProvider, useAutoservicio, PASOS } from "../../context/AutoservicioContext";
 import WelcomeScreen from "./WelcomeScreen";
 import TipoServicioScreen from "./TipoServicioScreen";

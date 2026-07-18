@@ -1,4 +1,3 @@
-// AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
 import { verificarPin } from "../api/auth.service";
 

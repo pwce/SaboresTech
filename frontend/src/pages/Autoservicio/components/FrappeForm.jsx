@@ -1,4 +1,3 @@
-// FrappeForm.jsx
 import { useState } from "react";
 import { LECHES_CONFIG, ENDULZANTES_CONFIG } from "../../../features/jornada/jornada.config";
 

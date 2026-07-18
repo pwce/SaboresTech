@@ -1,4 +1,3 @@
-//caja.controller.js
 import { AppDataSource } from '../config/configDb.js';
 import { CajaEntity } from '../entities/caja.entity.js';
 import { JornadaEntity } from '../entities/jornada.entity.js';
@@ -10,7 +9,6 @@ const jornadaRepository = AppDataSource.getRepository(JornadaEntity);
 const pedidoRepository = AppDataSource.getRepository(PedidoEntity);
 const gastoRepository = AppDataSource.getRepository(GastoEntity);
 
-// calcula ingresos y salidas desde que se abrió la caja hasta ahora (o hasta el cierre)
 async function calcularMovimientos(caja) {
   const desde = caja.fechaApertura;
   const hasta = caja.fechaCierre || new Date();
@@ -28,11 +26,30 @@ async function calcularMovimientos(caja) {
     .andWhere('gasto.fecha_registro BETWEEN :desde AND :hasta', { desde, hasta })
     .getMany();
 
+  const pedidosEfectivo = pedidosPagados.filter((p) => p.metodoPago === 'efectivo');
+  const gastosEfectivo = gastosRegistrados.filter((g) => g.metodoPago === 'efectivo');
+
+  const ingresos = pedidosEfectivo.reduce((acc, p) => acc + p.total, 0);
+  const salidas = gastosEfectivo.reduce((acc, g) => acc + g.monto, 0);
+
+  const ventasTotales = pedidosPagados.reduce((acc, p) => acc + p.total, 0);
+  const gastosTotales = gastosRegistrados.reduce((acc, g) => acc + g.monto, 0);
+  const gananciaReal = ventasTotales - gastosTotales;
+
+  const ventasPorMetodo = pedidosPagados.reduce((acc, p) => {
+    acc[p.metodoPago] = (acc[p.metodoPago] || 0) + p.total;
+    return acc;
+  }, {});
+
   return {
-    ingresos: pedidosPagados.reduce((acc, p) => acc + p.total, 0),
-    salidas: gastosRegistrados.reduce((acc, g) => acc + g.monto, 0),
+    ingresos,
+    salidas,
     cantidadPedidos: pedidosPagados.length,
     cantidadGastos: gastosRegistrados.length,
+    ventasTotales,
+    gastosTotales,
+    gananciaReal,
+    ventasPorMetodo,
   };
 }
 

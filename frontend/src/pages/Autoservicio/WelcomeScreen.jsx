@@ -1,5 +1,5 @@
-// WelcomeScreen.jsx
 import { useAutoservicio, PASOS } from "../../context/AutoservicioContext";
+import logoCarolina from "../../assets/logocarolina.png";
 
 export default function WelcomeScreen() {
   const { setPaso } = useAutoservicio();
@@ -7,9 +7,9 @@ export default function WelcomeScreen() {
   return (
     <button
       onClick={() => setPaso(PASOS.TIPO_SERVICIO)}
-      className="w-full h-full min-h-screen bg-carbon-900 flex flex-col items-center justify-center gap-8 px-6 text-center focus:outline-none"
+      className="w-full h-full min-h-screen bg-brand-500 flex flex-col items-center justify-center gap-8 px-6 text-center focus:outline-none"
     >
-      <span className="text-brand-400 font-display text-sm tracking-[0.3em] uppercase">
+      <span className="text-white/80 font-display text-sm tracking-[0.3em] uppercase">
         Sabores de Carolina
       </span>
 
@@ -17,11 +17,13 @@ export default function WelcomeScreen() {
         Ordena y Paga Aquí
       </h1>
 
-      <div className="w-16 h-16 rounded-full border-2 border-accent flex items-center justify-center animate-pulse mt-4">
-        <span className="text-accent text-2xl">👆</span>
-      </div>
+      <img
+        src={logoCarolina}
+        alt="Sabores de Carolina"
+        className="w-96 h-96 md:w-80 md:h-80 object-contain animate-pulse mt-2"
+      />
 
-      <p className="text-carbon-300 text-lg animate-pulse">
+      <p className="text-white/90 text-lg animate-pulse">
         Presiona para ordenar
       </p>
     </button>

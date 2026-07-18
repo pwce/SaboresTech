@@ -1,4 +1,3 @@
-// PagoTarjeta.jsx
 import { useEffect, useState } from "react";
 import { useAutoservicio, PASOS } from "../../../context/AutoservicioContext";
 import axiosClient from "../../../api/axiosClient";

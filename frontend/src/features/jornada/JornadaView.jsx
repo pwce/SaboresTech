@@ -1,4 +1,3 @@
-// JornadaView.jsx
 import React, { useEffect, useState } from "react";
 import Modal from "../../components/Modal";
 import { IconEditar, IconEliminar } from "../../components/Icons";
@@ -163,7 +162,7 @@ export default function JornadaView() {
       await cargarTodo();
     } catch (err) {
       console.error(err);
-      setError("No se pudo finalizar la jornada.");
+      setError(err.response?.data?.mensaje || "No se pudo finalizar la jornada.");
     } finally {
       setFinalizando(false);
       setConfirmandoFinalizar(false);
@@ -346,7 +345,7 @@ export default function JornadaView() {
               <h3 className="font-display font-bold text-white">
                 Insumos de la jornada{" "}
                 <span className="text-carbon-400 text-sm font-normal block sm:inline">
-                  (Toca uno para activarlo o desactivarlo)
+                  (toca uno para activarlo o desactivarlo)
                 </span>
               </h3>
               {huboCambiosPendientes && (
@@ -360,7 +359,7 @@ export default function JornadaView() {
               )}
             </div>
 
-            {/*aviso de poco stock de envases*/}
+            {/*aviso de poco stock de envases */}
             {envasesConPocoStock.length > 0 && (
               <div className="mb-4 px-4 py-2.5 rounded-card bg-yellow-500/10 border border-yellow-500/40 text-yellow-400 text-sm font-semibold">
                 Poco stock de envases, asegúrate de reponer:{" "}
@@ -370,6 +369,7 @@ export default function JornadaView() {
               </div>
             )}
 
+            {/* envases: siempre visibles y editables, nunca desaparecen aunque lleguen a 0 */}
             <div className="mb-4">
               <h4 className="text-brand-300 font-semibold text-sm mb-2">Envases</h4>
               <div className="flex flex-wrap gap-2">
@@ -392,6 +392,7 @@ export default function JornadaView() {
                 ))}
               </div>
             </div>
+
 
             {Object.entries(GRUPOS_LABEL).map(([grupo, label]) => {
               const clavesCatalogo = (CONFIG_POR_GRUPO[grupo] || []).map((c) => c.key);

@@ -1,14 +1,15 @@
-// pedidos.controller.js
 import { AppDataSource } from '../config/configDb.js';
 import { PedidoEntity } from '../entities/pedido.entity.js';
 import { DetallePedidoEntity } from '../entities/detallePedido.entity.js';
 import { ProductoEntity } from '../entities/producto.entity.js';
 import { JornadaEntity } from '../entities/jornada.entity.js';
+import { CajaEntity } from '../entities/caja.entity.js';
 
 const pedidoRepository = AppDataSource.getRepository(PedidoEntity);
 const detalleRepository = AppDataSource.getRepository(DetallePedidoEntity);
 const productoRepository = AppDataSource.getRepository(ProductoEntity);
 const jornadaRepository = AppDataSource.getRepository(JornadaEntity);
+const cajaRepository = AppDataSource.getRepository(CajaEntity);
 
 
 export async function crearPedido(req, res) {
@@ -31,6 +32,17 @@ export async function crearPedido(req, res) {
             return res.status(400).json({
                 success: false,
                 mensaje: "No hay ninguna jornada activa en este momento. No es posible generar pedidos."
+            });
+        }
+
+        // sin caja abierta no se puede vender: no hay con qué dar vuelto ni control del efectivo
+        const cajaAbierta = await cajaRepository.findOne({
+            where: { jornada: { id: jornadaActiva.id }, estado: 'abierta' },
+        });
+        if (!cajaAbierta) {
+            return res.status(400).json({
+                success: false,
+                mensaje: "Todavía no se ha abierto la caja de esta jornada. Avísale a la dueña para que la abra antes de tomar pedidos."
             });
         }
 

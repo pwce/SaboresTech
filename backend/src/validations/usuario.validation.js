@@ -1,4 +1,3 @@
-// usuario.validation.js
 import Joi from 'joi';
 
 const usuarioSchema = Joi.object({

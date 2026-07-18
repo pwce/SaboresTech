@@ -1,4 +1,3 @@
-// TipoServicioScreen.jsx
 import { useAutoservicio, PASOS } from "../../context/AutoservicioContext";
 import { IconComerAqui, IconParaLlevar } from "../../components/Icons";
 

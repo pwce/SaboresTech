@@ -1,4 +1,3 @@
-// jornada.routes.js
 import { Router } from 'express';
 import * as jornadaController from '../controllers/jornada.controller.js';
 import { verificarToken } from '../middlewares/verificarToken.middleware.js';

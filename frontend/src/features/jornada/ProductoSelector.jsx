@@ -1,4 +1,3 @@
-// ProductoSelector.jsx
 import React, { useState } from "react";
 import { CATEGORIAS_PRODUCTO, esProductoDeStockFijoPorNombre } from "./jornada.config";
 import { evaluarDisponibilidadProducto } from "./reglasDisponibilidad";

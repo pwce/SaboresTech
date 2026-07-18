@@ -1,4 +1,3 @@
-// usuarios.controller.js
 import { AppDataSource } from '../config/configDb.js';
 import { UsuarioEntity } from '../entities/usuario.entity.js';
 import bcrypt from 'bcrypt';

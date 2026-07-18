@@ -1,4 +1,3 @@
-// gastos.controller.js
 import { AppDataSource } from '../config/configDb.js';
 import { GastoEntity } from '../entities/gasto.entity.js';
 import { JornadaEntity } from '../entities/jornada.entity.js';

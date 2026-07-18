@@ -1,4 +1,3 @@
-// PinPad.jsx
 import React from 'react';
 
 export default function PinPad({ onPressNumber, onDelete, onClear, pinLength }) {

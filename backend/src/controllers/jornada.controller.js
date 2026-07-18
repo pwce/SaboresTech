@@ -1,7 +1,8 @@
-// jornada.controller.js
 import { AppDataSource } from '../config/configDb.js';
 import { JornadaEntity } from '../entities/jornada.entity.js';
 import { ProductoEntity } from '../entities/producto.entity.js';
+import { PedidoEntity } from '../entities/pedido.entity.js';
+import { Not, In } from 'typeorm';
 
 const jornadaRepository = AppDataSource.getRepository(JornadaEntity);
 
@@ -138,6 +139,22 @@ export async function finalizarJornada(req, res) {
             return res.status(400).json({
                 success: false,
                 mensaje: "No hay ninguna jornada abierta en este momento que se pueda cerrar."
+            });
+        }
+
+        const pedidoRepository = AppDataSource.getRepository(PedidoEntity);
+        const pedidosSinEntregar = await pedidoRepository.count({
+            where: {
+                jornada: { id: jornadaActiva.id },
+                estadoCocina: Not(In(['entregado'])),
+                estadoPago: Not('rechazado'),
+            },
+        });
+
+        if (pedidosSinEntregar > 0) {
+            return res.status(400).json({
+                success: false,
+                mensaje: `No puedes cerrar la jornada: todavía hay ${pedidosSinEntregar} pedido(s) sin entregar. Márcalos como entregados (o recházalos si corresponde) antes de finalizar.`
             });
         }
 

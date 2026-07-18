@@ -1,4 +1,3 @@
-// pedido.validation.js
 import Joi from 'joi';
 
 const detalleInternoSchema = Joi.object({
