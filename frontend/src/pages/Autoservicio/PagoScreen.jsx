@@ -3,11 +3,12 @@ import { useAutoservicio, PASOS } from "../../context/AutoservicioContext";
 import PagoEfectivo from "./components/PagoEfectivo";
 import PagoTransferencia from "./components/PagoTransferencia";
 import PagoTarjeta from "./components/PagoTarjeta";
+import { IconEfectivo, IconTarjeta, IconTransferencia } from "../../components/Icons";
 
 const METODOS = [
-  { id: "efectivo", label: "Efectivo", icono: "💵" },
-  { id: "tarjeta", label: "Tarjeta", icono: "💳" },
-  { id: "transferencia", label: "Transferencia", icono: "🏦" },
+  { id: "efectivo", label: "Efectivo", Icono: IconEfectivo },
+  { id: "tarjeta", label: "Tarjeta", Icono: IconTarjeta },
+  { id: "transferencia", label: "Transferencia", Icono: IconTransferencia },
 ];
 
 export default function PagoScreen() {
@@ -49,7 +50,7 @@ export default function PagoScreen() {
                   hover:border-accent transition-colors active:scale-95
                 "
               >
-                <span className="text-4xl">{m.icono}</span>
+                <m.Icono className="w-10 h-10 text-brand-400" />
                 <span className="text-white font-display font-medium">{m.label}</span>
               </button>
             ))}
@@ -62,9 +63,9 @@ export default function PagoScreen() {
           </p>
         )}
 
-        {metodo === "efectivo" && <PagoEfectivo />}
-        {metodo === "transferencia" && <PagoTransferencia />}
-        {metodo === "tarjeta" && <PagoTarjeta />}
+        {metodo === "efectivo" && <PagoEfectivo onVolverAMetodos={() => setMetodo(null)} />}
+        {metodo === "transferencia" && <PagoTransferencia onVolverAMetodos={() => setMetodo(null)} />}
+        {metodo === "tarjeta" && <PagoTarjeta onVolverAMetodos={() => setMetodo(null)} />}
       </div>
     </div>
   );

@@ -1,11 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   ENVASES_CONFIG,
   LECHES_CONFIG,
-  FRUTAS_CONFIG,
   ENDULZANTES_CONFIG,
   CREMA_CONFIG,
   EXTRAS_CONFIG,
+  obtenerLabelInsumo,
+  agregarInsumoPersonalizado,
 } from "./jornada.config";
 
 function ToggleChip({ activo, label, onClick }) {
@@ -13,7 +14,7 @@ function ToggleChip({ activo, label, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-2 rounded-full text-sm font-semibold border transition-colors min-h-touch
+      className={`px-3 py-2 sm:px-4 rounded-lg text-xs sm:text-sm font-semibold border transition-colors min-h-touch
         ${
           activo
             ? "bg-brand-500 border-brand-500 text-carbon-900"
@@ -29,7 +30,59 @@ function Seccion({ titulo, children }) {
   return (
     <div className="mb-6">
       <h4 className="font-display font-semibold text-brand-300 mb-3">{titulo}</h4>
-      <div className="flex flex-wrap gap-2">{children}</div>
+      <div className="flex flex-wrap gap-2 items-center">{children}</div>
+    </div>
+  );
+}
+
+function AgregarPersonalizado({ placeholder, onAgregar }) {
+  const [abierto, setAbierto] = useState(false);
+  const [valor, setValor] = useState("");
+
+  const confirmar = () => {
+    if (!valor.trim()) return;
+    onAgregar(valor.trim());
+    setValor("");
+    setAbierto(false);
+  };
+
+  if (!abierto) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAbierto(true)}
+        className="px-3 py-2 sm:px-4 rounded-lg text-xs sm:text-sm font-semibold border border-dashed border-brand-400 text-brand-400 min-h-touch"
+      >
+        + Agregar otra
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        autoFocus
+        type="text"
+        placeholder={placeholder}
+        value={valor}
+        onChange={(e) => setValor(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && confirmar()}
+        className="bg-carbon-900 border border-carbon-600 rounded-lg px-3 py-2 text-white text-sm w-36"
+      />
+      <button
+        type="button"
+        onClick={confirmar}
+        className="px-3 py-2 rounded-lg bg-brand-500 text-carbon-900 text-sm font-semibold min-h-touch"
+      >
+        Agregar
+      </button>
+      <button
+        type="button"
+        onClick={() => { setAbierto(false); setValor(""); }}
+        className="text-carbon-400 text-sm px-2"
+      >
+        Cancelar
+      </button>
     </div>
   );
 }
@@ -43,19 +96,26 @@ export default function InsumosForm({ insumos, onChange }) {
   };
 
   const cambiarEnvase = (key, valor) => {
-    const num = Math.max(0, Number(valor) || 0);
+    const num = Math.min(1000, Math.max(0, Number(valor) || 0));
     onChange({ ...insumos, envases: { ...insumos.envases, [key]: num } });
   };
+
+  const agregarFruta = (nombreLibre) => {
+    onChange(agregarInsumoPersonalizado(insumos, "frutas", nombreLibre));
+  };
+
+  const frutasKeys = Object.keys(insumos.frutas || {});
 
   return (
     <div>
       <Seccion titulo="Envases (define si se pueden vender bebestibles)">
         {ENVASES_CONFIG.map((e) => (
-          <div key={e.key} className="flex items-center gap-2 bg-carbon-800 border border-carbon-600 rounded-full px-4 py-2">
+          <div key={e.key} className="flex items-center gap-2 bg-carbon-800 border border-carbon-600 rounded-lg px-3 py-2 sm:px-4">
             <label className="text-sm text-carbon-200 font-semibold">{e.label}</label>
             <input
               type="number"
               min="0"
+              max="1000"
               value={insumos.envases[e.key]}
               onChange={(ev) => cambiarEnvase(e.key, ev.target.value)}
               className="w-16 bg-carbon-900 border border-carbon-600 rounded px-2 py-1 text-white text-sm"
@@ -76,14 +136,15 @@ export default function InsumosForm({ insumos, onChange }) {
       </Seccion>
 
       <Seccion titulo="Frutas">
-        {FRUTAS_CONFIG.map((f) => (
+        {frutasKeys.map((key) => (
           <ToggleChip
-            key={f.key}
-            label={f.label}
-            activo={insumos.frutas[f.key]}
-            onClick={() => toggle("frutas", f.key)}
+            key={key}
+            label={obtenerLabelInsumo("frutas", key, insumos)}
+            activo={insumos.frutas[key]}
+            onClick={() => toggle("frutas", key)}
           />
         ))}
+        <AgregarPersonalizado placeholder="Ej: Kiwi" onAgregar={agregarFruta} />
       </Seccion>
 
       <Seccion titulo="Endulzantes">

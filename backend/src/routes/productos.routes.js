@@ -5,7 +5,7 @@ import fs from 'fs';
 import * as productosController from '../controllers/productos.controller.js';
 import { verificarToken } from '../middlewares/verificarToken.middleware.js';
 import { validarSchema } from '../middlewares/validador.middleware.js';
-import productoSchema from '../validations/producto.validation.js';
+import productoSchema, { stockProductoSchema } from '../validations/producto.validation.js';
 
 const router = Router();
 
@@ -36,16 +36,17 @@ router.get('/jornada', productosController.obtenerProductosJornada);
 // POST /api/v1/productos para crear uno nuevo (solo atendedor o dueña)
 router.post('/', verificarToken(['atendedor', 'dueña']), upload.single('imagen'), validarSchema(productoSchema), productosController.crearProducto);
 
-// PUT /api/v1/productos/:id mpdificar un producto
-router.put('/:id', verificarToken(['atendedor', 'dueña']), validarSchema(productoSchema), productosController.actualizarProducto);
+// PUT /api/v1/productos/:id mpdificar un producto (admite reemplazar la imagen)
+router.put('/:id', verificarToken(['atendedor', 'dueña']), upload.single('imagen'), validarSchema(productoSchema), productosController.actualizarProducto);
 
 // PATCH /api/v1/productos/:id/jornada activar/desactivar un producto del catalogo para la jornada de hoy
 router.patch('/:id/jornada', verificarToken(['atendedor', 'dueña']), productosController.cambiarEstadoJornada);
 
-// PATCH /api/v1/productos/:id/stock actualizar solo la cantidad de stock (sin validar el resto del esquema)
-router.patch('/:id/stock', verificarToken(['atendedor', 'dueña']), productosController.actualizarStockProducto);
+// PATCH /api/v1/productos/:id/stock actualizar solo la cantidad de stock 
+router.patch('/:id/stock', verificarToken(['atendedor', 'dueña']), validarSchema(stockProductoSchema), productosController.actualizarStockProducto);
 
 // DELETE /api/v1/productos/:i eiminar un producto
 router.delete('/:id', verificarToken(['atendedor', 'dueña']), productosController.eliminarProducto);
 
 export default router;
+

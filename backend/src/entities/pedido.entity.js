@@ -41,6 +41,12 @@ export const PedidoEntity = new EntitySchema({
             length: 30,
             nullable: false, 
         },
+        tipoServicio: {
+            name: 'tipo_servicio',
+            type: 'varchar',
+            length: 20,
+            nullable: true,
+        },
         montoRecibido: {
             name: 'monto_recibido',
             type: 'int',
@@ -57,6 +63,13 @@ export const PedidoEntity = new EntitySchema({
             type: 'many-to-one',
             joinColumn: { name: 'usuario_id' },
             nullable: true, 
+            onDelete: 'SET NULL',
+        },
+        jornada: {
+            target: 'Jornada',
+            type: 'many-to-one',
+            joinColumn: { name: 'jornada_id' },
+            nullable: true,
             onDelete: 'SET NULL',
         },
         detalles: {

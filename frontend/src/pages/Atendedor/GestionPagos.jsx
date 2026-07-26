@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
 import axiosClient from "../../api/axiosClient";
+import { IconExito } from "../../components/Icons";
+import { useConfirm } from "../../context/ConfirmContext";
+import { useToast } from "../../context/ToastContext";
 
 export default function GestionPagos() {
+  const confirmar = useConfirm();
+  const mostrarToast = useToast();
   const [pedidosPendientes, setPedidosPendientes] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [montosEfectivo, setMontosEfectivo] = useState({}); // Guarda el input de caja para el vuelto
+  const [montosEfectivo, setMontosEfectivo] = useState({});
+  const [procesandoId, setProcesandoId] = useState(null);
+  const [mensajeExito, setMensajeExito] = useState("");
 
   const obtenerPedidosPendientes = async () => {
     try {
@@ -28,15 +35,50 @@ export default function GestionPagos() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleValidarPago = async (pedidoId, metodo, vuelto = 0) => {
+  useEffect(() => {
+    if (!mensajeExito) return;
+    const t = setTimeout(() => setMensajeExito(""), 3000);
+    return () => clearTimeout(t);
+  }, [mensajeExito]);
+
+  const handleValidarPago = async (pedido, vuelto = 0) => {
+    setProcesandoId(pedido.id);
     try {
-      await axiosClient.put(`/v1/pedidos/${pedidoId}/validar-pago`, {
-        vuelto: Number(vuelto),
+      await axiosClient.put(`/v1/pedidos/${pedido.id}/estado`, {
+        nuevoEstadoPago: "validado",
+        metodoPago: pedido.metodoPago,
+        montoRecibido: pedido.metodoPago === "efectivo" ? Number(montosEfectivo[pedido.id]) : undefined,
       });
-      setPedidosPendientes((prev) => prev.filter((p) => p.id !== pedidoId));
-      alert(`Pedido #${pedidoId} validado con éxito.`);
+      setPedidosPendientes((prev) => prev.filter((p) => p.id !== pedido.id));
+      setMensajeExito(`Pago del Pedido N° ${pedido.numeroJornada} validado. Se envió a cocina.`);
     } catch (error) {
-      alert(error.response?.data?.mensaje || "Error al validar el pago");
+      mostrarToast(error.response?.data?.mensaje || "Error al validar el pago", "error");
+    } finally {
+      setProcesandoId(null);
+    }
+  };
+
+  // para rechazar el pago (ej: efectivo falso, comprobante de transferencia invalido)
+  const handleRechazarPago = async (pedido) => {
+    const ok = await confirmar({
+      titulo: "Rechazar pago",
+      mensaje: `¿Rechazar el pago del Pedido N° ${pedido.numeroJornada}? El cliente verá que su pago fue rechazado.`,
+      confirmarTexto: "Rechazar pago",
+      peligroso: true,
+    });
+    if (!ok) return;
+
+    setProcesandoId(pedido.id);
+    try {
+      await axiosClient.put(`/v1/pedidos/${pedido.id}/estado`, {
+        nuevoEstadoPago: "rechazado",
+      });
+      setPedidosPendientes((prev) => prev.filter((p) => p.id !== pedido.id));
+      mostrarToast(`Pago del Pedido N° ${pedido.numeroJornada} rechazado.`, "info");
+    } catch (error) {
+      mostrarToast(error.response?.data?.mensaje || "Error al rechazar el pago", "error");
+    } finally {
+      setProcesandoId(null);
     }
   };
 
@@ -55,6 +97,13 @@ export default function GestionPagos() {
         </p>
       </header>
 
+      {mensajeExito && (
+        <div className="mb-4 max-w-4xl bg-brand-500/10 border border-brand-500/30 text-brand-300 rounded-card px-4 py-3 text-sm font-medium flex items-center gap-2">
+          <IconExito className="w-4 h-4 shrink-0" />
+          {mensajeExito}
+        </div>
+      )}
+
       {pedidosPendientes.length === 0 ? (
         <div className="bg-carbon-800 border border-carbon-700 rounded-card p-10 text-center text-carbon-400">
           No hay pagos pendientes de validación en este momento.
@@ -65,17 +114,18 @@ export default function GestionPagos() {
             const inputMonto = Number(montosEfectivo[pedido.id]) || 0;
             const vueltoCalculado = Math.max(0, inputMonto - pedido.total);
             const alcanzaParaPagar = inputMonto >= pedido.total;
+            const procesando = procesandoId === pedido.id;
 
             return (
               <div
                 key={pedido.id}
                 className="bg-carbon-800 border border-accent/20 rounded-card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
-                {/* Datos del Pedido */}
+                {/* datos del pedido */}
                 <div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-lg font-bold text-white">
-                      Jornada N° {pedido.numeroJornada}
+                      Pedido N° {pedido.numeroJornada}
                     </span>
                     <span
                       className={`px-3 py-0.5 rounded-full text-xs font-bold uppercase ${
@@ -86,25 +136,33 @@ export default function GestionPagos() {
                     >
                       {pedido.metodoPago === "efectivo" ? "Efectivo" : "Transferencia"}
                     </span>
+                    {pedido.tipoServicio && (
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
+                          pedido.tipoServicio === "llevar"
+                            ? "bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                            : "bg-teal-500/10 text-teal-300 border border-teal-500/20"
+                        }`}
+                      >
+                        {pedido.tipoServicio === "llevar" ? "Para llevar" : "Para comer aquí"}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-xs text-carbon-400 mt-1">ID: {pedido.id}</p>
-                  
-                  {/* Detalles de productos */}
+
+                  {/* detalles de productos */}
                   <div className="mt-2 space-y-1">
-                    {pedido.detalles?.map((det, idx) => (
+                    {pedido.productos?.map((det, idx) => (
                       <p key={idx} className="text-sm text-carbon-200">
                         <span className="font-semibold text-brand-400">{det.cantidad}x</span> {det.producto?.nombre}
                         {det.personalizaciones && (
-                          <span className="text-xs text-carbon-400 block ml-5 italic">
-                            - {det.personalizaciones}
-                          </span>
+                          <span className="text-sm text-carbon-300 block ml-5">- {det.personalizaciones}</span>
                         )}
                       </p>
                     ))}
                   </div>
                 </div>
 
-                {/* Acciones de Validación */}
+                {/* acciones de validacion */}
                 <div className="flex flex-col items-end gap-3 min-w-[250px]">
                   <p className="text-lg font-bold text-white">
                     Total: ${pedido.total.toLocaleString("es-CL")}
@@ -131,24 +189,30 @@ export default function GestionPagos() {
                         </span>
                       </div>
                       <button
-                        disabled={!alcanzaParaPagar}
-                        onClick={() =>
-                          handleValidarPago(pedido.id, "efectivo", vueltoCalculado)
-                        }
+                        disabled={!alcanzaParaPagar || procesando}
+                        onClick={() => handleValidarPago(pedido, vueltoCalculado)}
                         className="w-full py-2 bg-brand-500 text-carbon-900 font-bold rounded text-sm disabled:opacity-30 hover:bg-brand-400 transition"
                       >
-                        Validar y Entregar Vuelto
+                        {procesando ? "Procesando..." : "Validar y Entregar Vuelto"}
                       </button>
                     </div>
                   ) : (
-                    /* Transferencia */
                     <button
-                      onClick={() => handleValidarPago(pedido.id, "transferencia")}
-                      className="w-full py-2 bg-blue-500 text-white font-bold rounded text-sm hover:bg-blue-400 transition"
+                      disabled={procesando}
+                      onClick={() => handleValidarPago(pedido)}
+                      className="w-full py-2 bg-blue-500 text-white font-bold rounded text-sm hover:bg-blue-400 transition disabled:opacity-30"
                     >
-                      Confirmar Comprobante
+                      {procesando ? "Procesando..." : "Confirmar Comprobante"}
                     </button>
                   )}
+
+                  <button
+                    disabled={procesando}
+                    onClick={() => handleRechazarPago(pedido)}
+                    className="w-full py-2 border border-estado-agotado text-estado-agotado font-bold rounded text-sm hover:bg-estado-agotado/10 transition disabled:opacity-30"
+                  >
+                    Rechazar pago
+                  </button>
                 </div>
               </div>
             );

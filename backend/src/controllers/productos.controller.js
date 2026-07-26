@@ -15,6 +15,7 @@ export async function obtenerProductos(req, res) {
             controlaStock: p.controlaStock,
             stock: p.stock,
             enJornada: p.enJornada ?? false,
+            tipo: determinarTipoProducto(p.nombre),
             imagen: p.imagenUrl || 'https://via.placeholder.com/60'
         }));
         return res.status(200).json({
@@ -95,7 +96,7 @@ function determinarTipoProducto(nombre) {
     if (n.includes("sandwich") || n.includes("sándwich")) return "sandwich";
     if (n.includes("jugo")) return "jugo";
     if (n.includes("milkshake")) return "milkshake";
-    if (n.includes("frappe") || n.includes("frappé")) return "frappe";
+    if (n.includes("frap")) return "frappe";
     return "simple"; 
 }
 
@@ -151,7 +152,7 @@ export async function crearProducto(req, res) {
 export async function actualizarProducto(req, res) {
     try {
         const { id } = req.params; 
-        const { nombre, precio, category, disponible, imagenUrl, enJornada } = req.body; 
+        const { nombre, precio, categoria, controlaStock, disponible, imagenUrl, enJornada } = req.body; 
 
         const producto = await productoRepository.findOneBy({ id: Number(id) });
         if (!producto) {
@@ -162,18 +163,34 @@ export async function actualizarProducto(req, res) {
         }
 
         if (nombre !== undefined) producto.nombre = nombre;
-        if (precio !== undefined) producto.precio = precio;
-        if (category !== undefined) producto.categoria = category;
+        if (precio !== undefined) producto.precio = Number(precio);
+        if (categoria !== undefined) producto.categoria = categoria;
+        if (controlaStock !== undefined) producto.controlaStock = controlaStock === 'true' || controlaStock === true;
         if (disponible !== undefined) producto.disponible = disponible;
-        if (imagenUrl !== undefined) producto.imagenUrl = imagenUrl; 
         if (enJornada !== undefined) producto.enJornada = enJornada;
+
+        if (req.file) {
+            producto.imagenUrl = `http://localhost:3000/uploads/${req.file.filename}`;
+        } else if (imagenUrl !== undefined) {
+            producto.imagenUrl = imagenUrl;
+        }
 
         await productoRepository.save(producto);
 
         return res.status(200).json({
             success: true,
             mensaje: "Producto actualizado con éxito",
-            data: producto
+            data: {
+                id: producto.id,
+                nombre: producto.nombre,
+                precio: producto.precio,
+                categoria: producto.categoria,
+                disponible: producto.disponible,
+                controlaStock: producto.controlaStock,
+                stock: producto.stock,
+                enJornada: producto.enJornada ?? false,
+                imagen: producto.imagenUrl || 'https://via.placeholder.com/60'
+            }
         });
     } catch (error) {
         console.error("Error en actualizarProducto:", error);
@@ -190,10 +207,10 @@ export async function actualizarStockProducto(req, res) {
         const { id } = req.params;
         const { stock } = req.body;
 
-        if (stock === undefined || Number(stock) < 0) {
+        if (stock === undefined || Number(stock) < 0 || Number(stock) > 150) {
             return res.status(400).json({
                 success: false,
-                mensaje: "Debes indicar una cantidad de stock válida (mayor o igual a 0)"
+                mensaje: "El stock debe ser un número entre 0 y 150 unidades"
             });
         }
 
@@ -206,6 +223,9 @@ export async function actualizarStockProducto(req, res) {
         }
 
         producto.stock = Number(stock);
+        if (Number(stock) > 0) {
+            producto.disponible = true;
+        }
         await productoRepository.save(producto);
 
         return res.status(200).json({
@@ -235,12 +255,25 @@ export async function eliminarProducto(req, res) {
             });
         }
 
-        await productoRepository.remove(producto);
-
-        return res.status(200).json({
-            success: true,
-            mensaje: `El producto '${producto.nombre}' fue eliminado exitosamente`
-        });
+        try {
+            await productoRepository.remove(producto);
+            return res.status(200).json({
+                success: true,
+                mensaje: `El producto '${producto.nombre}' fue eliminado exitosamente`
+            });
+        } catch (errorEliminar) {
+            if (errorEliminar.code === '23503') {
+                producto.disponible = false;
+                producto.enJornada = false;
+                await productoRepository.save(producto);
+                return res.status(200).json({
+                    success: true,
+                    softDelete: true,
+                    mensaje: `'${producto.nombre}' ya tiene pedidos registrados, así que no se puede borrar del todo sin perder ese historial. Se desactivó del catálogo y de la jornada de hoy.`
+                });
+            }
+            throw errorEliminar;
+        }
     } catch (error) {
         console.error("Error en eliminarProducto:", error);
         return res.status(500).json({
@@ -249,3 +282,4 @@ export async function eliminarProducto(req, res) {
         });
     }
 }
+

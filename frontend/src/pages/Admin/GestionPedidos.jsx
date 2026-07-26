@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import axiosClient from "../../api/axiosClient";
+import { useToast } from "../../context/ToastContext";
 
 export default function GestionPedidos() {
+  const mostrarToast = useToast();
   const [pedidos, setPedidos] = useState([]);
   const [cargando, setCargando] = useState(true);
 
@@ -23,14 +25,14 @@ export default function GestionPedidos() {
 
   useEffect(() => {
     obtenerPedidosActivos();
-    const interval = setInterval(obtenerPedidosActivos, 5000); 
+    const interval = setInterval(obtenerPedidosActivos, 5000);
     return () => clearInterval(interval);
   }, []);
 
   const cambiarEstadoCocina = async (pedidoId, nuevoEstado) => {
     try {
-      await axiosClient.put(`/v1/pedidos/${pedidoId}/estado-cocina`, {
-        estadoCocina: nuevoEstado,
+      await axiosClient.put(`/v1/pedidos/${pedidoId}/estado`, {
+        nuevoEstado,
       });
       setPedidos((prev) =>
         prev
@@ -38,7 +40,7 @@ export default function GestionPedidos() {
           .filter((p) => p.estadoCocina !== "entregado")
       );
     } catch (error) {
-      alert("No se pudo actualizar el estado de la cocina");
+      mostrarToast("No se pudo actualizar el estado de la cocina", "error");
     }
   };
 
@@ -61,10 +63,9 @@ export default function GestionPedidos() {
       </header>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* Columna: En Preparación */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold border-b border-orange-500/30 pb-2 text-orange-400">
-          En Preparación ({enPreparacion.length})
+            En Preparación ({enPreparacion.length})
           </h2>
           {enPreparacion.length === 0 ? (
             <p className="text-carbon-500 text-sm italic">No hay pedidos preparándose.</p>
@@ -81,7 +82,6 @@ export default function GestionPedidos() {
           )}
         </div>
 
-        {/* Columna: Listos para entregar */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold border-b border-green-500/30 pb-2 text-green-400">
             Listos para entregar ({listos.length})
@@ -111,29 +111,44 @@ function TarjetaPedido({ pedido, accionLabel, accionColor, onAccion }) {
       <div>
         <div className="flex justify-between items-start">
           <h3 className="text-white text-lg font-bold">
-            Jornada N° {pedido.numeroJornada}
+            Pedido N° {pedido.numeroJornada}
           </h3>
           <span className="text-xs text-carbon-400">
-            Hace {calcularTiempoTranscurrido(pedido.createdAt)} min
+            Hace {calcularTiempoTranscurrido(pedido.fecha)} min
           </span>
         </div>
-        <p className="text-xs text-carbon-500">ID: {pedido.id}</p>
+        {pedido.tipoServicio && (
+          <span
+            className={`inline-block mt-1 px-2 py-0.5 rounded text-xs font-bold uppercase ${
+              pedido.tipoServicio === "llevar"
+                ? "bg-purple-500/10 text-purple-300 border border-purple-500/20"
+                : "bg-teal-500/10 text-teal-300 border border-teal-500/20"
+            }`}
+          >
+            {pedido.tipoServicio === "llevar" ? "Para llevar" : "Para comer aquí"}
+          </span>
+        )}
 
-        {/* Lista de productos */}
-        <div className="mt-3 space-y-1.5">
-          {pedido.detalles?.map((det, idx) => (
-            <p key={idx} className="text-sm text-carbon-200">
-              <span className="font-semibold text-brand-400">{det.cantidad}x</span> {det.producto?.nombre}
+        {/*lista de productos*/}
+        <div className="mt-3 space-y-2">
+          {pedido.productos?.map((det, idx) => (
+            <div key={idx} className="bg-carbon-900 border border-carbon-700 rounded-lg p-2.5">
+              <p className="text-sm text-white font-semibold">
+                <span className="text-brand-400">{det.cantidad}x</span> {det.producto?.nombre}
+              </p>
+
               {det.personalizaciones && (
-                <span className="text-xs text-carbon-400 block ml-5 italic">
-                  - {det.personalizaciones}
-                </span>
+                <div className="mt-1.5 bg-brand-500/10 border border-brand-500/30 rounded px-2.5 py-1.5">
+                  <p className="text-xs font-bold text-brand-300 uppercase tracking-wide mb-0.5">
+                    Personalización
+                  </p>
+                  <p className="text-sm text-white font-medium">{det.personalizaciones}</p>
+                </div>
               )}
-            </p>
+            </div>
           ))}
         </div>
       </div>
-
       <button
         onClick={onAccion}
         className={`w-full py-2.5 rounded font-bold text-sm transition-transform active:scale-95 ${accionColor}`}

@@ -1,7 +1,8 @@
 import { AppDataSource } from '../config/configDb.js';
 import { JornadaEntity } from '../entities/jornada.entity.js';
 import { ProductoEntity } from '../entities/producto.entity.js';
-
+import { PedidoEntity } from '../entities/pedido.entity.js';
+import { Not, In } from 'typeorm';
 
 const jornadaRepository = AppDataSource.getRepository(JornadaEntity);
 
@@ -14,7 +15,6 @@ function obtenerFechaHoraChile() {
     return new Date(`${anio}-${mes}-${dia}T${hora}:${minuto}:${segundo}`);
 }
 
-// para los jugos y milkshakes
 export async function obtenerJornadaActiva(req, res) {
     try {
         const jornada = await jornadaRepository.findOne({
@@ -50,6 +50,30 @@ export async function obtenerJornadaActiva(req, res) {
     }
 }
 
+export async function obtenerJornadas(req, res) {
+    try {
+        const jornadas = await jornadaRepository.find({
+            order: { id: 'DESC' },
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: jornadas.map((j) => ({
+                id: j.id,
+                fechaInicio: j.fechaInicio,
+                fechaFin: j.fechaFin,
+                activa: j.activa,
+            })),
+        });
+    } catch (error) {
+        console.error("Error al obtener el historial de jornadas:", error);
+        return res.status(500).json({
+            success: false,
+            mensaje: "Error interno al obtener el historial de jornadas",
+        });
+    }
+}
+
 export async function guardarJornada(req, res) {
     try {
         const { insumosDisponibles, productosSeleccionados } = req.body; 
@@ -76,8 +100,8 @@ export async function guardarJornada(req, res) {
             for (const p of productosSeleccionados) {
                 await productoRepository.update(
                     { id: Number(p.id) },
-                    { enJornada: true, stock: Number(p.stock || 0) }
-                );
+                    { enJornada: true, stock: p.stock != null ? Number(p.stock) : 0, disponible: true }
+              );
             }
         }
 
@@ -104,10 +128,8 @@ export async function guardarJornada(req, res) {
     }
 }
 
-
 export async function finalizarJornada(req, res) {
     try {
-
         const jornadaActiva = await jornadaRepository.findOne({
             where: { activa: true },
             order: { id: 'DESC' }
@@ -120,10 +142,29 @@ export async function finalizarJornada(req, res) {
             });
         }
 
+        const pedidoRepository = AppDataSource.getRepository(PedidoEntity);
+        const pedidosSinEntregar = await pedidoRepository.count({
+            where: {
+                jornada: { id: jornadaActiva.id },
+                estadoCocina: Not(In(['entregado'])),
+                estadoPago: Not('rechazado'),
+            },
+        });
+
+        if (pedidosSinEntregar > 0) {
+            return res.status(400).json({
+                success: false,
+                mensaje: `No puedes cerrar la jornada: todavía hay ${pedidosSinEntregar} pedido(s) sin entregar. Márcalos como entregados (o recházalos si corresponde) antes de finalizar.`
+            });
+        }
+
         jornadaActiva.activa = false;
         jornadaActiva.fechaFin = obtenerFechaHoraChile();
 
         await jornadaRepository.save(jornadaActiva);
+
+        const productoRepository = AppDataSource.getRepository(ProductoEntity);
+        await productoRepository.update({ enJornada: true }, { enJornada: false });
 
         return res.status(200).json({
             success: true,
@@ -143,6 +184,7 @@ export async function finalizarJornada(req, res) {
         });
     }
 }
+
 
 export async function actualizarInsumosJornada(req, res) {
     try {

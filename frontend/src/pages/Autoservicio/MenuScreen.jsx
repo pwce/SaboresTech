@@ -1,30 +1,34 @@
 import { useState, useMemo, useEffect } from "react";
 import { obtenerProductos } from "../../api/productos.service";
+import { obtenerJornadaActiva } from "../../api/jornada.service";
 import CategoriaTabs from "./components/CategoriaTabs";
 import ProductoCard from "./components/ProductoCard";
 import ProductoModal from "./components/ProductoModal";
 import CarritoFlotante from "./components/CarritoFlotante";
 import { CATEGORIAS_PRODUCTO } from "../../features/jornada/jornada.config";
+import { evaluarDisponibilidadProducto } from "../../features/jornada/reglasDisponibilidad";
 
 
 export default function MenuScreen() {
 
   const [categoriaActiva, setCategoriaActiva] = useState(CATEGORIAS_PRODUCTO[0]);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
-  
+
   const [productosReal, setProductosReal] = useState([]);
+  const [insumosJornada, setInsumosJornada] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     async function cargarMenu() {
       try {
-        setCargando(true);
-        const data = await obtenerProductos(); 
-        
-        const activosHoy = data.filter(p => Boolean(p.enJornada));
-        
+        const [data, jornada] = await Promise.all([
+          obtenerProductos(),
+          obtenerJornadaActiva(),
+        ]);
+        const activosHoy = data.filter((p) => Boolean(p.enJornada) && p.disponible !== false);
         setProductosReal(activosHoy);
+        setInsumosJornada(jornada?.insumos || null);
       } catch (err) {
         console.error("Error al cargar el menú del backend:", err);
         setError("No se pudo cargar el menú. Por favor, intente más tarde.");
@@ -33,13 +37,17 @@ export default function MenuScreen() {
       }
     }
     cargarMenu();
+
+    // refresca el menu periodicamente para reflejar cambios que haga el personal
+    const intervalo = setInterval(cargarMenu, 30000);
+    return () => clearInterval(intervalo);
   }, []);
 
   const productosFiltrados = useMemo(() => {
-    return productosReal.filter(
-      (p) => (p.categoria || "").toLowerCase() === (categoriaActiva || "").toLowerCase()
-    );
-  }, [categoriaActiva, productosReal]);
+    return productosReal
+      .filter((p) => (p.categoria || "").toLowerCase() === (categoriaActiva || "").toLowerCase())
+      .filter((p) => !evaluarDisponibilidadProducto(p.nombre, insumosJornada).bloqueado);
+  }, [categoriaActiva, productosReal, insumosJornada]);
 
   if (cargando) {
     return (
@@ -53,6 +61,21 @@ export default function MenuScreen() {
     return (
       <div className="min-h-screen bg-carbon-900 flex items-center justify-center text-rose-400 p-4 text-center">
         {error}
+      </div>
+    );
+  }
+
+  if (!insumosJornada) {
+    return (
+      <div className="min-h-screen bg-carbon-900 flex flex-col items-center justify-center text-center px-6 gap-3">
+        <span className="text-4xl"></span>
+        <h2 className="text-white font-display text-xl font-bold">
+          Local cerrado por el momento
+        </h2>
+        <p className="text-carbon-300 text-sm max-w-sm">
+          No hay ninguna jornada activa ahora mismo, así que no se pueden tomar pedidos.
+          Vuelve a intentarlo más tarde.
+        </p>
       </div>
     );
   }
@@ -72,20 +95,22 @@ export default function MenuScreen() {
         onChange={setCategoriaActiva}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4">
-        {productosFiltrados.length === 0 ? (
-          <div className="col-span-full text-center py-12 text-carbon-400 text-sm">
-            No hay productos disponibles en esta categoría para el día de hoy.
-          </div>
-        ) : (
-          productosFiltrados.map((producto) => (
-            <ProductoCard
-              key={producto.id}
-              producto={producto}
-              onAgregar={setProductoSeleccionado}
-            />
-          ))
-        )}
+      <div className="max-w-5xl mx-auto">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3 sm:gap-4 p-3 sm:p-4">
+          {productosFiltrados.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-carbon-400 text-sm">
+              No hay productos disponibles en esta categoría para el día de hoy.
+            </div>
+          ) : (
+            productosFiltrados.map((producto) => (
+              <ProductoCard
+                key={producto.id}
+                producto={producto}
+                onAgregar={setProductoSeleccionado}
+              />
+            ))
+          )}
+        </div>
       </div>
 
       <CarritoFlotante />
@@ -93,6 +118,7 @@ export default function MenuScreen() {
       {productoSeleccionado && (
         <ProductoModal
           producto={productoSeleccionado}
+          insumosJornada={insumosJornada}
           onCerrar={() => setProductoSeleccionado(null)}
         />
       )}

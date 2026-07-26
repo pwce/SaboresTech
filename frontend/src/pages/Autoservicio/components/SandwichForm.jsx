@@ -1,27 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function SandwichForm({ onCambiar }) {
+export default function SandwichForm({ onCambiar, salsaVerdeDisponible }) {
   const [salsa, setSalsa] = useState("no");
-  const [cantidad, setCantidad] = useState(1);
 
   function emitir(overrides = {}) {
-    const estado = { salsa, cantidad, ...overrides };
+    const estado = { salsa, ...overrides };
     onCambiar({
       ...estado,
-      resumen: `Salsa: ${estado.salsa === "si" ? "sí" : "no"}`,
+      resumen: salsaVerdeDisponible
+        ? `Salsa verde: ${estado.salsa === "si" ? "sí" : "no"}`
+        : "Sin personalización",
     });
   }
 
-  function cambiarCantidad(delta) {
-    const nueva = Math.max(1, cantidad + delta);
-    setCantidad(nueva);
-    emitir({ cantidad: nueva });
+  useEffect(() => {
+    if (!salsaVerdeDisponible) {
+      onCambiar({ salsa: "no", resumen: "Sin personalización" });
+    }
+  }, [salsaVerdeDisponible]);
+
+  if (!salsaVerdeDisponible) {
+    return (
+      <p className="text-carbon-300 text-sm italic">
+        Este producto no requiere personalización adicional.
+      </p>
+    );
   }
 
   return (
     <div className="flex flex-col gap-6">
       <fieldset>
-        <legend className="text-white font-medium mb-2">¿Agregar salsa?</legend>
+        <legend className="text-white font-medium mb-2">¿Agregar salsa verde?</legend>
         <div className="flex gap-3">
           {[["si", "Sí"], ["no", "No"]].map(([val, txt]) => (
             <button
@@ -34,27 +43,6 @@ export default function SandwichForm({ onCambiar }) {
               {txt}
             </button>
           ))}
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend className="text-white font-medium mb-2">Cantidad</legend>
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => cambiarCantidad(-1)}
-            className="w-12 h-12 rounded-full bg-carbon-700 text-white text-xl font-bold active:scale-90"
-          >
-            −
-          </button>
-          <span className="text-white text-2xl font-display w-8 text-center">{cantidad}</span>
-          <button
-            type="button"
-            onClick={() => cambiarCantidad(1)}
-            className="w-12 h-12 rounded-full bg-brand-500 text-white text-xl font-bold active:scale-90"
-          >
-            +
-          </button>
         </div>
       </fieldset>
     </div>

@@ -23,12 +23,15 @@ export default {
         // negro/gris oscuro para secciones sólidas
         carbon: {
           50:  "#F4F4F5",
-          100: "#E4E4E7",
-          300: "#A1A1AA",
-          500: "#52525B",
-          700: "#27272A",
-          800: "#1C1C1F",
-          900: "#111113", // negro casi puro para fondos sólidos
+  100: "#E4E4E7",
+  200: "#D4D4D8", 
+  300: "#A1A1AA",
+  400: "#71717A", 
+  500: "#52525B",
+  600: "#3F3F46",
+  700: "#27272A",
+  800: "#1C1C1F",
+  900: "#111113",
         },
         //amarillo/naranja cálido para alertas y botones interactivos
         accent: {

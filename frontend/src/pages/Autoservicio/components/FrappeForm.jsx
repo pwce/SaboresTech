@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { LECHES_CONFIG, ENDULZANTES_CONFIG } from "../../../features/jornada/jornada.config";
+
+const OPCION_SIN_NADA = { key: "ninguno", label: "Sin nada" };
 
 const SiNoToggle = ({ label, valor, onChange }) => (
   <fieldset>
@@ -19,17 +22,25 @@ const SiNoToggle = ({ label, valor, onChange }) => (
   </fieldset>
 );
 
-export default function FrappeForm({ onCambiar }) {
+export default function FrappeForm({ onCambiar, lechesDisponibles, endulzantesDisponibles }) {
+  const lechesOpciones = lechesDisponibles ?? [];
+  const endulzantesOpciones = [...(endulzantesDisponibles ?? []), OPCION_SIN_NADA];
+
   const [crema, setCrema] = useState("si");
-  const [tipoLeche, setTipoLeche] = useState("natural");
+  const [tipoLeche, setTipoLeche] = useState(lechesOpciones[0]?.key ?? "");
   const [salsa, setSalsa] = useState("no");
-  const [endulzante, setEndulzante] = useState("azucar");
+  const [endulzante, setEndulzante] = useState(OPCION_SIN_NADA.key);
 
   function emitir(overrides = {}) {
     const estado = { crema, tipoLeche, salsa, endulzante, ...overrides };
+    const lecheLabel = LECHES_CONFIG.find((l) => l.key === estado.tipoLeche)?.label || estado.tipoLeche;
+    const endLabel = estado.endulzante === OPCION_SIN_NADA.key
+      ? "sin endulzante"
+      : (ENDULZANTES_CONFIG.find((e) => e.key === estado.endulzante)?.label || estado.endulzante);
+
     onCambiar({
       ...estado,
-      resumen: `Crema: ${estado.crema === "si" ? "sí" : "no"} · Leche ${estado.tipoLeche} · Salsa: ${estado.salsa === "si" ? "sí" : "no"} · ${estado.endulzante}`,
+      resumen: `Crema: ${estado.crema === "si" ? "sí" : "no"} · ${lecheLabel} · Salsa: ${estado.salsa === "si" ? "sí" : "no"} · ${endLabel}`,
     });
   }
 
@@ -39,16 +50,19 @@ export default function FrappeForm({ onCambiar }) {
 
       <fieldset>
         <legend className="text-white font-medium mb-2">Tipo de leche</legend>
-        <div className="flex gap-3">
-          {["natural", "deslactosada"].map((op) => (
+        <div className="flex gap-3 flex-wrap">
+          {lechesOpciones.length === 0 && (
+            <p className="text-carbon-400 text-sm italic">No hay leche disponible hoy.</p>
+          )}
+          {lechesOpciones.map((op) => (
             <button
-              key={op}
+              key={op.key}
               type="button"
-              onClick={() => { setTipoLeche(op); emitir({ tipoLeche: op }); }}
-              className={`px-4 py-2 rounded-full border capitalize text-sm min-h-touch
-                ${tipoLeche === op ? "bg-brand-500 border-brand-500 text-white" : "border-accent/40 text-carbon-300"}`}
+              onClick={() => { setTipoLeche(op.key); emitir({ tipoLeche: op.key }); }}
+              className={`px-4 py-2 rounded-full border text-sm min-h-touch
+                ${tipoLeche === op.key ? "bg-brand-500 border-brand-500 text-white" : "border-accent/40 text-carbon-300"}`}
             >
-              {op}
+              {op.label}
             </button>
           ))}
         </div>
@@ -58,16 +72,16 @@ export default function FrappeForm({ onCambiar }) {
 
       <fieldset>
         <legend className="text-white font-medium mb-2">Endulzante</legend>
-        <div className="flex gap-3">
-          {["azucar", "endulzante"].map((op) => (
+        <div className="flex gap-3 flex-wrap">
+          {endulzantesOpciones.map((op) => (
             <button
-              key={op}
+              key={op.key}
               type="button"
-              onClick={() => { setEndulzante(op); emitir({ endulzante: op }); }}
-              className={`px-4 py-2 rounded-full border capitalize text-sm min-h-touch
-                ${endulzante === op ? "bg-brand-500 border-brand-500 text-white" : "border-accent/40 text-carbon-300"}`}
+              onClick={() => { setEndulzante(op.key); emitir({ endulzante: op.key }); }}
+              className={`px-4 py-2 rounded-full border text-sm min-h-touch
+                ${endulzante === op.key ? "bg-brand-500 border-brand-500 text-white" : "border-accent/40 text-carbon-300"}`}
             >
-              {op}
+              {op.label}
             </button>
           ))}
         </div>
